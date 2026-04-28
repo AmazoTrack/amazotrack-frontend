@@ -1,73 +1,96 @@
-# React + TypeScript + Vite
+# AmazoTrack — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interface web do sistema de gestão de resíduos sólidos industriais do Polo Industrial de Manaus (PIM).
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Camada | Tecnologia |
+|---|---|
+| Linguagem | TypeScript |
+| Framework | React 18 + Vite |
+| Estilização | Tailwind CSS |
+| Roteamento | React Router DOM |
+| HTTP Client | Fetch API (wrapper customizado) |
+| Gráficos | Recharts |
+| PDF | jsPDF |
+| Deploy | Vercel |
 
-## React Compiler
+## Como rodar localmente
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Pré-requisitos
+- Node.js >= 18
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 1. Clonar e instalar
+```bash
+git clone https://github.com/AmazoTrack/amazotrack-frontend.git
+cd AmazoTrack
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Configurar variáveis de ambiente
+Crie um arquivo `.env` na raiz do projeto:
+VITE_API_URL=https://amazotrack-backend-production.up.railway.app
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 3. Iniciar o projeto
+```bash
+npm run dev
 ```
+Acesse http://localhost:5173
+
+## Scripts disponíveis
+
+| Comando | Descrição |
+|---|---|
+| `npm run dev` | Inicia em modo desenvolvimento |
+| `npm run build` | Gera build de produção |
+| `npm run preview` | Visualiza o build localmente |
+
+## Estrutura do projeto
+src/
+├── components/        # Componentes reutilizáveis
+│   ├── Button.tsx
+│   ├── Input.tsx
+│   ├── Card.tsx
+│   ├── Badge.tsx
+│   ├── Layout.tsx
+│   ├── Loading.tsx
+│   └── ErrorPage.tsx
+├── pages/             # Telas da aplicação
+├── hooks/             # Custom hooks
+├── services/          # Chamadas de API
+│   └── api.ts
+├── schemas/           # Validações Zod
+├── types/             # Tipagens TypeScript
+└── utils/             # Funções auxiliares
+
+## Padrão de commits
+
+### Formato
+<tipo>(<escopo>): <descrição>
+
+### Tipos
+
+| Tipo | Uso | Exemplo |
+|---|---|---|
+| `feat` | Nova funcionalidade | `feat(auth): adiciona tela de login` |
+| `fix` | Correção de bug | `fix(modal): resolve problema de z-index` |
+| `chore` | Setup e configuração | `chore: configura eslint` |
+| `style` | Ajuste visual | `style(button): melhora hover` |
+| `refactor` | Melhoria no código | `refactor: remove código duplicado` |
+| `docs` | Documentação | `docs: atualiza README` |
+| `perf` | Performance | `perf: otimiza carregamento de imagens` |
+| `test` | Testes | `test: adiciona testes para Button` |
+
+## Padrão de branches
+feat/nome-da-tarefa
+fix/nome-do-bug
+chore/nome-da-config
+
+## Equipe Frontend
+
+| Nome | Papel |
+|---|---|
+| Raffaela | Líder Frontend |
+| Renan | Desenvolvedor — Integração e contratos de API |
+| Jakeline | Desenvolvedora Frontend |
+| Gabrielly | Desenvolvedora Frontend |
