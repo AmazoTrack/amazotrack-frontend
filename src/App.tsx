@@ -1,8 +1,13 @@
+import { Routes, Route } from 'react-router-dom'
+import Layout from './components/Layout'
+
 function App() {
   return (
-    <div className="flex items-center justify-center h-screen bg-blue-100">
-      <h1 className="text-4xl font-bold text-blue-600">Tailwind funcionando! 🎉</h1>
-    </div>
+    <Routes>
+      <Route path="/" element={<Layout />}>
+        <Route index element={<div className="text-gray-500">Selecione uma opção no menu</div>} />
+      </Route>
+    </Routes>
   )
 }
 
