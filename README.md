@@ -46,6 +46,8 @@ Acesse http://localhost:5173
 | `npm run preview` | Visualiza o build localmente |
 
 ## Estrutura do projeto
+
+```
 src/
 ├── components/        # Componentes reutilizáveis
 │   ├── Button.tsx
@@ -62,11 +64,12 @@ src/
 ├── schemas/           # Validações Zod
 ├── types/             # Tipagens TypeScript
 └── utils/             # Funções auxiliares
+```
 
 ## Padrão de commits
 
 ### Formato
-<tipo>(<escopo>): <descrição>
+tipo(escopo): descrição
 
 ### Tipos
 
