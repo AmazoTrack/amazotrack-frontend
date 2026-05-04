@@ -19,7 +19,11 @@ export default function Input({
 }: InputProps) {
   return (
     <div className="flex flex-col gap-1">
-      {label && <label className="text-sm font-medium text-gray-700">{label}</label>}
+      {label && (
+        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          {label}
+        </label>
+      )}
       <input
         type={type}        
         required={required}   
@@ -29,7 +33,7 @@ export default function Input({
         className={`border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 
           ${error ? "border-red-500 focus:ring-red-400" : "border-gray-300 focus:border-[#005F73] focus:ring-[#005F73]/20"}`}
       />
-      {error && <span className="text-sm text-red-500">{error}</span>}
+      {error && <span className="text-xs text-red-500">{error}</span>}
     </div>
   )
 }
