@@ -186,13 +186,9 @@ export default function MTRsList() {
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-6">
-        {/* Page title */}
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1
-              className="text-2xl font-bold text-gray-900"
-              style={{ fontFamily: "'Public Sans', sans-serif" }}
-            >
+            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Public Sans', sans-serif" }}>
               Histórico e Rastreabilidade
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">
@@ -220,13 +216,13 @@ export default function MTRsList() {
           </div>
         </div>
 
-        {/* Stats row */}
+        {/* Stats */}
         <div className="grid grid-cols-4 gap-4 mb-5">
           {[
-            { label: 'Total de MTRs', value: '128', sub: 'este mês', color: 'text-gray-900', bg: 'bg-[#e6f4f7]', icon: 'text-[#005F73]' },
-            { label: 'Pendentes', value: '03', sub: 'aguardando coleta', color: 'text-yellow-700', bg: 'bg-yellow-50', icon: 'text-yellow-500' },
-            { label: 'Em Trânsito', value: '07', sub: 'em movimentação', color: 'text-blue-700', bg: 'bg-blue-50', icon: 'text-blue-500' },
-            { label: 'Concluídos', value: '118', sub: 'destinação confirmada', color: 'text-[#005F73]', bg: 'bg-[#e6f4f7]', icon: 'text-[#005F73]' },
+            { label: 'Total de MTRs', value: '128', sub: 'este mês', color: 'text-gray-900' },
+            { label: 'Pendentes', value: '03', sub: 'aguardando coleta', color: 'text-yellow-700' },
+            { label: 'Em Trânsito', value: '07', sub: 'em movimentação', color: 'text-blue-700' },
+            { label: 'Concluídos', value: '118', sub: 'destinação confirmada', color: 'text-[#005F73]' },
           ].map((s) => (
             <div key={s.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{s.label}</p>
@@ -238,9 +234,8 @@ export default function MTRsList() {
           ))}
         </div>
 
-        {/* Table card */}
+        {/* Table */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
-          {/* Tabs */}
           <div className="flex items-center justify-between px-4 pt-4 pb-0 border-b border-gray-100">
             <div className="flex gap-1">
               {tabs.map((tab) => (
@@ -272,7 +267,6 @@ export default function MTRsList() {
             </button>
           </div>
 
-          {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -286,7 +280,11 @@ export default function MTRsList() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {mtrsFiltrados.map((mtr) => (
-                  <tr key={mtr.id} className="hover:bg-gray-50/70 transition-colors cursor-pointer">
+                  <tr
+                    key={mtr.id}
+                    onClick={() => navigate(`/residuos/${mtr.id}`)}
+                    className="hover:bg-gray-50/70 transition-colors cursor-pointer"
+                  >
                     <td className="px-4 py-3.5">
                       <span className="font-mono text-xs font-semibold text-[#005F73]">{mtr.numero}</span>
                     </td>
@@ -303,7 +301,10 @@ export default function MTRsList() {
                       <StatusBadge status={mtr.status} />
                     </td>
                     <td className="px-4 py-3.5">
-                      <button className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors">
+                      <button
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
+                      >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>
                         </svg>
@@ -315,7 +316,6 @@ export default function MTRsList() {
             </table>
           </div>
 
-          {/* Footer */}
           <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-gray-50/50">
             <span className="text-xs text-gray-500">
               Exibindo {mtrsFiltrados.length} de 128 registros
@@ -332,9 +332,7 @@ export default function MTRsList() {
                 </button>
               ))}
               <span className="px-1 text-gray-400 text-xs">...</span>
-              <button className="w-7 h-7 text-xs rounded-md font-medium text-gray-600 hover:bg-gray-100">
-                32
-              </button>
+              <button className="w-7 h-7 text-xs rounded-md font-medium text-gray-600 hover:bg-gray-100">32</button>
               <button className="w-7 h-7 text-xs rounded-md text-gray-500 hover:bg-gray-100 flex items-center justify-center">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polyline points="9 18 15 12 9 6"/>
