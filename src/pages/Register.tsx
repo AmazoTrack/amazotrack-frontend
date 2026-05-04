@@ -11,6 +11,9 @@ export default function Register() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const navigate = useNavigate();
 
@@ -28,6 +31,15 @@ export default function Register() {
 
     setIsLoading(true);
 
+    // --- MOCK
+    if (email === 'admin@gmail.com') {
+      setTimeout(() => {
+        navigate('/login');
+        setIsLoading(false);
+      }, 1000);
+      return;
+    }
+
     try {
       const response = await fetch('https://amazotrack-backend-production.up.railway.app/auth/register', {
         method: 'POST',
@@ -41,7 +53,6 @@ export default function Register() {
         throw new Error(data.message || 'Erro ao criar conta');
       }
 
-      // Redireciona para o login após sucesso
       navigate('/login');
     } catch (err: any) {
       setError(err.message);
@@ -52,8 +63,8 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Painel Esquerdo */}
-      <div className="hidden lg:flex lg:w-1/2 bg-green-900 flex-col justify-center p-16 text-white">
+
+     <div className="hidden lg:flex lg:w-1/2 bg-[#0B2A2D] flex-col justify-center items-center p-12 text-center text-white">
         <h1 className="text-4xl font-bold mb-8">AmazoTrack</h1>
         <div className="space-y-4 text-green-100">
           <p className="flex items-center gap-3">
@@ -71,7 +82,6 @@ export default function Register() {
         </div>
       </div>
 
-      {/* Painel Direito - Formulário */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50 overflow-y-auto">
         <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-xl shadow-sm border border-gray-100">
           <div className="text-center">
@@ -98,28 +108,66 @@ export default function Register() {
               required
             />
 
-            <Input 
-              label="Senha"
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Input 
+                label="Senha"
+                type={showPassword ? 'text' : 'password'} 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-9 text-gray-400 hover:text-[#005F73] transition-colors focus:outline-none"
+              >
+                {showPassword ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                )}
+              </button>
+            </div>
 
-            <Input 
-              label="Confirmar Senha"
-              type="password" 
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
+            <div className="relative">
+              <Input 
+                label="Confirmar Senha"
+                type={showConfirmPassword ? 'text' : 'password'} 
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-9 text-gray-400 hover:text-[#005F73] transition-colors focus:outline-none"
+              >
+                {showConfirmPassword ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                )}
+              </button>
+            </div>
 
             <label className="flex items-start gap-2 cursor-pointer mt-2">
               <input 
                 type="checkbox" 
                 checked={termsAccepted}
                 onChange={(e) => setTermsAccepted(e.target.checked)}
-                className="mt-1 rounded text-green-600 focus:ring-green-500"
+                className="mt-1 rounded text-[#005F73] focus:ring-[#005F73]"
               />
               <span className="text-sm text-gray-600 leading-tight">
                 Concordo com os Termos de Serviço e Políticas de Segurança NBR
@@ -134,8 +182,8 @@ export default function Register() {
 
             <p className="text-center text-sm text-gray-600 mt-4">
               Já possui uma conta?{' '}
-              <Link to="/login" className="text-blue-600 hover:underline font-medium">
-                Acessar portal
+              <Link to="/login" className="text-[#005F73] hover:text-[#004558] hover:underline font-medium">
+               Acessar portal
               </Link>
             </p>
           </form>

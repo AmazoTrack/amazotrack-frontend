@@ -13,10 +13,25 @@ export default function Login() {
   
   const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent) => {
+ const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+
+    // --- MOCK: CONTA DE TESTE ---
+    if (email === 'admin@gmail.com' && password === 'admin') {
+      setTimeout(() => {
+        localStorage.setItem('token', 'token-fake-de-teste-12345');
+        
+        if (rememberMe) {
+          localStorage.setItem('rememberMe', email);
+        }
+        
+        navigate('/dashboard');
+        setIsLoading(false);
+      }, 1000); 
+      return; 
+    }
 
     try {
       const response = await fetch('https://amazotrack-backend-production.up.railway.app/auth/login', {
@@ -31,15 +46,12 @@ export default function Login() {
         throw new Error(data.message || 'Erro ao realizar login');
       }
 
-      // Salva o token
       localStorage.setItem('token', data.token);
       
-      // Se tiver implementado a lógica de lembrar, pode salvar no localStorage também
       if (rememberMe) {
         localStorage.setItem('rememberMe', email);
       }
 
-      // Redireciona para o dashboard
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message);
@@ -50,15 +62,13 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Painel Esquerdo */}
-      <div className="hidden lg:flex lg:w-1/2 bg-green-900 flex-col justify-center items-center p-12 text-center text-white">
+      <div className="hidden lg:flex lg:w-1/2 bg-[#0B2A2D] flex-col justify-center items-center p-12 text-center text-white">
         <h1 className="text-4xl font-bold mb-4">AmazoTrack</h1>
         <p className="text-green-100 text-lg max-w-md">
           Sistema de gestão e monitoramento otimizado. Acesse sua conta para continuar.
         </p>
       </div>
 
-      {/* Painel Direito - Formulário */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-gray-50">
         <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-xl shadow-sm border border-gray-100">
           <div className="text-center">
@@ -88,9 +98,19 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-9 text-sm text-gray-500 hover:text-gray-700"
+                className="absolute right-3 top-9 text-gray-400 hover:text-[#005F73] transition-colors focus:outline-none"
               >
-                {showPassword ? 'Ocultar' : 'Mostrar'}
+                {showPassword ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                )}
               </button>
             </div>
 
@@ -100,12 +120,12 @@ export default function Login() {
                   type="checkbox" 
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded text-green-600 focus:ring-green-500"
+                  className="rounded text-[#005F73] focus:ring-[#005F73]"
                 />
                 <span className="text-sm text-gray-600">Mantenha-me conectado</span>
               </label>
               
-              <a href="#" className="text-sm text-blue-600 hover:underline">
+              <a href="#" className="text-sm text-[#005F73] hover:text-[#004558] hover:underline font-medium">
                 Esqueceu a senha?
               </a>
             </div>
@@ -116,7 +136,7 @@ export default function Login() {
 
             <p className="text-center text-sm text-gray-600">
               Ainda não tem conta?{' '}
-              <Link to="/register" className="text-blue-600 hover:underline font-medium">
+              <Link to="/register" className="text-[#005F73] hover:text-[#004558] hover:underline font-medium">
                 Criar conta
               </Link>
             </p>
