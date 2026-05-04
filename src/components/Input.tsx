@@ -4,13 +4,25 @@ interface InputProps {
   value: string
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   error?: string
+  type?: string      
+  required?: boolean  
 }
 
-export default function Input({ label, placeholder, value, onChange, error = "" }: InputProps) {
+export default function Input({ 
+  label, 
+  placeholder, 
+  value, 
+  onChange, 
+  error = "", 
+  type = "text",      // <-- Text é o padrão
+  required = false 
+}: InputProps) {
   return (
     <div className="flex flex-col gap-1">
       {label && <label className="text-sm font-medium text-gray-700">{label}</label>}
       <input
+        type={type}        
+        required={required}   
         value={value}
         onChange={onChange}
         placeholder={placeholder}
