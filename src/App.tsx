@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
+import Login from './pages/Login'
+import Register from './pages/Register'
 import EmpresasList from './pages/empresas/EmpresasList'
 import EmpresaDetail from './pages/empresas/EmpresaDetail'
 import NovaEmpresa from './pages/empresas/NovaEmpresa'
@@ -20,9 +22,12 @@ function Placeholder({ title }: { title: string }) {
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Navigate to="/empresas" replace />} />
-        <Route path="dashboard" element={<Placeholder title="Dashboard" />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/dashboard" element={<Layout />}>
+        <Route index element={<Navigate to="/dashboard/home" replace />} />
+        <Route path="home" element={<Placeholder title="Dashboard Inicial" />} />
         <Route path="residuos" element={<Placeholder title="Resíduos" />} />
         <Route path="residuos/:id" element={<ResiduosDetail />} />
         <Route path="empresas" element={<EmpresasList />} />
@@ -30,6 +35,7 @@ export default function App() {
         <Route path="empresas/:id" element={<EmpresaDetail />} />
         <Route path="mtrs" element={<MTRsList />} />
       </Route>
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )
 }
