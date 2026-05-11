@@ -7,6 +7,7 @@ import EmpresaDetail from './pages/empresas/EmpresaDetail'
 import NovaEmpresa from './pages/empresas/NovaEmpresa'
 import MTRsList from './pages/mtrs/MTRsList'
 import ResiduosDetail from './pages/residuos/ResiduosDetail'
+import CadastrarResiduo from './pages/residuos/CadastrarResiduo'
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -29,6 +30,7 @@ export default function App() {
         <Route index element={<Navigate to="/dashboard/home" replace />} />
         <Route path="home" element={<Placeholder title="Dashboard Inicial" />} />
         <Route path="residuos" element={<Placeholder title="Resíduos" />} />
+        <Route path="residuos/cadastrar" element={<CadastrarResiduo />} />
         <Route path="residuos/:id" element={<ResiduosDetail />} />
         <Route path="empresas" element={<EmpresasList />} />
         <Route path="empresas/nova" element={<NovaEmpresa />} />
