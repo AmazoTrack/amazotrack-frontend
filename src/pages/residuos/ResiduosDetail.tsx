@@ -1,3 +1,4 @@
+import { gerarMTRMock } from '../../utils/gerarMTR'
 import { useParams, useNavigate } from 'react-router-dom'
 import Badge from '../../components/Badge'
 import Card from '../../components/Card'
@@ -418,7 +419,7 @@ export default function ResiduosDetail() {
             <Button variant="outlined" onClick={() => navigate(`/residuos/${waste.id}/editar`)}>
               Editar
             </Button>
-            <Button variant="primary" onClick={() => navigate(`/residuos/${waste.id}/mtr`)}>
+            <Button variant="primary" onClick={gerarMTRMock}>
               Gerar MTR
             </Button>
             <Button variant="outlined" disabled className="flex items-center gap-2">
