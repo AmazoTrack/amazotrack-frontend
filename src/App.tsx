@@ -6,6 +6,7 @@ import EmpresasList from './pages/empresas/EmpresasList'
 import EmpresaDetail from './pages/empresas/EmpresaDetail'
 import NovaEmpresa from './pages/empresas/NovaEmpresa'
 import MTRsList from './pages/mtrs/MTRsList'
+import Dashboard from './pages/dashboard/Dashboard'
 import ResiduosDetail from './pages/residuos/ResiduosDetail'
 import CadastrarResiduo from './pages/residuos/CadastrarResiduo'
 
@@ -28,7 +29,7 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/dashboard" element={<Layout />}>
         <Route index element={<Navigate to="/dashboard/home" replace />} />
-        <Route path="home" element={<Placeholder title="Dashboard Inicial" />} />
+        <Route path="home" element={<Dashboard />} />
         <Route path="residuos" element={<Placeholder title="Resíduos" />} />
         <Route path="residuos/cadastrar" element={<CadastrarResiduo />} />
         <Route path="residuos/:id" element={<ResiduosDetail />} />
