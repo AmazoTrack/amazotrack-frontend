@@ -130,9 +130,9 @@ export default function Login() {
               </a>
             </div>
 
-            <Button disabled={isLoading} variant="primary">
-              {isLoading ? 'Entrando...' : 'Entrar no Sistema'}
-            </Button>
+           <Button onClick={handleLogin} disabled={isLoading} variant="primary">
+            {isLoading ? 'Entrando...' : 'Entrar no Sistema'}
+           </Button>
 
             <p className="text-center text-sm text-gray-600">
               Ainda não tem conta?{' '}

@@ -371,7 +371,7 @@ export default function ResiduosDetail() {
       {/* Topbar */}
       <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
         <button
-          onClick={() => navigate('/residuos')}
+          onClick={() => navigate('/dashboard/residuos')}
           className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-[#005F73] transition-colors"
         >
           <IconArrowLeft />
@@ -415,7 +415,7 @@ export default function ResiduosDetail() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outlined" onClick={() => navigate(`/residuos/${waste.id}/editar`)}>
+            <Button variant="outlined" onClick={() => navigate(`/dashboard/residuos/editar/${waste.id}`)}>
               Editar
             </Button>
             <Button variant="primary" onClick={() => navigate(`/residuos/${waste.id}/mtr`)}>

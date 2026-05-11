@@ -50,10 +50,10 @@ function IconLogout() {
 }
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: IconDashboard },
-  { to: '/residuos', label: 'Resíduos', icon: IconLeaf },
-  { to: '/empresas', label: 'Empresas', icon: IconBuilding },
-  { to: '/mtrs', label: 'MTRs', icon: IconDoc },
+  { to: '/dashboard/home', label: 'Dashboard', icon: IconDashboard },
+  { to: '/dashboard/residuos', label: 'Resíduos', icon: IconLeaf },
+  { to: '/dashboard/empresas', label: 'Empresas', icon: IconBuilding },
+  { to: '/dashboard/mtrs', label: 'MTRs', icon: IconDoc },
 ]
 
 export default function Layout() {

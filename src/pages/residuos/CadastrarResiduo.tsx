@@ -180,7 +180,6 @@ export default function NovoResiduo() {
     if (!validate()) return
     setLoading(true)
 
-
     await new Promise(r => setTimeout(r, 800))
     setLoading(false)
     setSuccess(true)
@@ -190,7 +189,6 @@ export default function NovoResiduo() {
   return (
     <div className="flex flex-col h-full">
 
-      {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <span className="text-gray-400 text-sm">Resíduos</span>
@@ -212,6 +210,17 @@ export default function NovoResiduo() {
       <div className="flex-1 overflow-auto p-6 bg-[#f0f5f8]">
 
         <div className="mb-6">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-[17px] text-[#334155] hover:text-[#005F73] transition-colors mb-4 font-medium"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Voltar
+          </button>
+
           <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Public Sans', sans-serif" }}>
             Cadastrar Resíduo
           </h1>
@@ -231,7 +240,6 @@ export default function NovoResiduo() {
 
         <div className="flex gap-5">
 
-          {/* Formulário */}
           <div className="flex-1 bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex flex-col gap-5">
 
             <div>
@@ -380,6 +388,7 @@ export default function NovoResiduo() {
               )}
             </button>
           </div>
+
           <div className="w-72 flex-shrink-0 flex flex-col gap-4">
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
               <div className="flex items-center gap-2 mb-3">
@@ -438,6 +447,7 @@ export default function NovoResiduo() {
             </div>
           </div>
         </div>
+
         <div className="mt-5 bg-white rounded-xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <h2 className="text-sm font-semibold text-gray-800">Últimos Lançamentos</h2>
@@ -470,6 +480,7 @@ export default function NovoResiduo() {
             </table>
           </div>
         </div>
+
       </div>
     </div>
   )

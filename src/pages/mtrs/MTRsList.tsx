@@ -205,7 +205,7 @@ export default function MTRsList() {
               Exportar
             </button>
             <button
-              onClick={() => navigate('/empresas')}
+              onClick={() => navigate('/dashboard/empresas')}
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-[#005F73] rounded-lg hover:bg-[#004558] transition-colors"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
