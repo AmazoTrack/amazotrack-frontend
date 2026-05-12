@@ -9,6 +9,7 @@ import MTRsList from './pages/mtrs/MTRsList'
 import Dashboard from './pages/dashboard/Dashboard'
 import ResiduosDetail from './pages/residuos/ResiduosDetail'
 import CadastrarResiduo from './pages/residuos/CadastrarResiduo'
+import ResiduosList from './pages/residuos/ResiduosList'
 
 function Placeholder({ title }: { title: string }) {
   return (
@@ -30,8 +31,9 @@ export default function App() {
       <Route path="/dashboard" element={<Layout />}>
         <Route index element={<Navigate to="/dashboard/home" replace />} />
         <Route path="home" element={<Dashboard />} />
-        <Route path="residuos" element={<Placeholder title="Resíduos" />} />
+        <Route path="residuos" element={<ResiduosList />} />
         <Route path="residuos/cadastrar" element={<CadastrarResiduo />} />
+        <Route path="residuos/editar/:id" element={<CadastrarResiduo />} />
         <Route path="residuos/:id" element={<ResiduosDetail />} />
         <Route path="empresas" element={<EmpresasList />} />
         <Route path="empresas/nova" element={<NovaEmpresa />} />
