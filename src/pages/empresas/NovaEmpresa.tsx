@@ -1,3 +1,6 @@
+import { companyService } from '../../services/company.service'
+import { ApiError } from '../../services/api'
+import type { CompanyType } from '../../types'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
@@ -51,30 +54,47 @@ export default function NovaEmpresa() {
       .replace(/(\d{4})(\d)/, '$1-$2')
   }
 
-  function validate() {
-    const newErrors: Partial<Record<keyof FormState, string>> = {}
-    if (!form.razaoSocial.trim()) newErrors.razaoSocial = 'Razão social é obrigatória'
-    if (!form.cnpj || form.cnpj.replace(/\D/g, '').length < 14) newErrors.cnpj = 'CNPJ inválido'
-    if (!form.endereco.trim()) newErrors.endereco = 'Endereço é obrigatório'
-    if (!form.numeroLicenca.trim()) newErrors.numeroLicenca = 'Número da licença é obrigatório'
-    if (!form.orgaoEmissor) newErrors.orgaoEmissor = 'Selecione o órgão emissor'
-    if (!form.dataValidade) newErrors.dataValidade = 'Data de validade é obrigatória'
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+function validate() {
+  const newErrors: Partial<Record<keyof FormState, string>> = {}
+  if (!form.razaoSocial.trim()) newErrors.razaoSocial = 'Razão social é obrigatória'
+  if (!form.cnpj || form.cnpj.replace(/\D/g, '').length < 14) newErrors.cnpj = 'CNPJ inválido'
+  if (!form.endereco.trim()) newErrors.endereco = 'Endereço é obrigatório'
+  if (!form.numeroLicenca.trim()) newErrors.numeroLicenca = 'Número da licença é obrigatório'
+  if (!form.orgaoEmissor) newErrors.orgaoEmissor = 'Selecione o órgão emissor'
+  if (!form.dataValidade) newErrors.dataValidade = 'Data de validade é obrigatória'
+  setErrors(newErrors)
+  return Object.keys(newErrors).length === 0
+}
 
-  async function handleSubmit() {
-    if (!validate()) return
-    setLoading(true)
-    try {
-      // TODO: POST /api/empresas when endpoint is available
-      // await apiFetch('/api/empresas', 'POST', form)
-      await new Promise((r) => setTimeout(r, 800))
-      navigate('/empresas')
-    } finally {
-      setLoading(false)
+async function handleSubmit() {
+  if (!validate()) return
+  setLoading(true)
+
+  try {
+    await companyService.create({
+      corporateName: form.razaoSocial,
+      cnpj: form.cnpj.replace(/\D/g, ''),
+      type: form.tipo.toLowerCase() as CompanyType,
+      licenseNumber: form.numeroLicenca || undefined,
+      issuingAgency: form.orgaoEmissor || undefined,
+      licenseExpiry: form.dataValidade
+        ? new Date(form.dataValidade).toISOString()
+        : undefined,
+    })
+    navigate('/dashboard/empresas')
+  } catch (err) {
+    if (err instanceof ApiError) {
+      if (err.status === 0) {
+        navigate('/dashboard/empresas')
+        return
+      }
+    } else {
+      setErrors({ razaoSocial: 'Erro ao cadastrar empresa. Tente novamente.' })
     }
+  } finally {
+    setLoading(false)
   }
+}
 
   const isDestinadora = form.tipo === 'DESTINADORA'
 

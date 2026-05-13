@@ -2,8 +2,31 @@ const BASE_URL = import.meta.env.VITE_API_URL
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
-async function apiFetch(endpoint: string, method: HttpMethod = 'GET', body?: object) {
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+    public details: Array<{ field: string; message: string }> = []
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+// Evento customizado para sessão expirada — AuthContext vai escutar isso
+export const SESSION_EXPIRED_EVENT = 'amazotrack:session-expired'
+
+async function apiFetch<T = unknown>(
+  endpoint: string,
+  method: HttpMethod = 'GET',
+  body?: object
+): Promise<T> {
   const token = localStorage.getItem('token')
+
+  if (token === 'token-fake-de-teste-12345') {
+    console.log('[apiFetch] Mock detectado — abortando chamada real')
+    throw new ApiError(0, 'Usando dados de demonstração')
+  }
 
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method,
@@ -14,11 +37,23 @@ async function apiFetch(endpoint: string, method: HttpMethod = 'GET', body?: obj
     ...(body ? { body: JSON.stringify(body) } : {}),
   })
 
-  if (!response.ok) {
-    throw new Error(`Erro ${response.status}: ${response.statusText}`)
+  // Token expirado — emite evento, AuthContext cuida do redirect
+  if (response.status === 401) {
+    window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT))
+    throw new ApiError(401, 'Sessão expirada. Faça login novamente.')
   }
 
-  return response.json()
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      data.message ?? 'Erro na requisição',
+      data.details ?? []
+    )
+  }
+
+  return data as T
 }
 
 export default apiFetch

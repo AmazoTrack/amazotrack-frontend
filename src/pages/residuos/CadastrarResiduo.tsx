@@ -1,3 +1,6 @@
+import { companyService } from '../../services/company.service'
+import { wasteService } from '../../services/waste.service'
+import { ApiError } from '../../services/api'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -177,15 +180,43 @@ export default function NovoResiduo() {
   }
 
   async function handleSubmit() {
-    if (!validate()) return
-    setLoading(true)
+  if (!validate()) return
+  setLoading(true)
 
-
-    await new Promise(r => setTimeout(r, 800))
-    setLoading(false)
+  try {
+    await wasteService.create({
+      code: form.code || undefined,
+      description: form.description,
+      quantity: Number(form.quantity),
+      unit: form.unit,
+      sector: form.sector,
+      companyId: Number(form.companyId),
+    })
     setSuccess(true)
     setTimeout(() => navigate('/dashboard/residuos'), 1500)
+  } catch (err) {
+    if (err instanceof ApiError) {
+      if (err.status === 0) {
+        setSuccess(true)
+        setTimeout(() => navigate('/dashboard/residuos'), 1500)
+        return
+      }
+      const newErrors: FormErrors = {}
+      err.details.forEach(({ field, message }) => {
+        newErrors[field as keyof FormErrors] = message
+      })
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors)
+      } else {
+        setErrors({ description: err.message })
+      }
+    } else {
+      setErrors({ description: 'Erro ao cadastrar resíduo. Tente novamente.' })
+    }
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <div className="flex flex-col h-full">

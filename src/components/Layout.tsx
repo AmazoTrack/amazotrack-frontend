@@ -1,4 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 function IconDashboard() {
   return (
@@ -50,14 +51,15 @@ function IconLogout() {
 }
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: IconDashboard },
-  { to: '/residuos', label: 'Resíduos', icon: IconLeaf },
-  { to: '/empresas', label: 'Empresas', icon: IconBuilding },
-  { to: '/mtrs', label: 'MTRs', icon: IconDoc },
+  { to: '/dashboard/home', label: 'Dashboard', icon: IconDashboard },
+  { to: '/dashboard/residuos', label: 'Resíduos', icon: IconLeaf },
+  { to: '/dashboard/empresas', label: 'Empresas', icon: IconBuilding },
+  { to: '/dashboard/mtrs', label: 'MTRs', icon: IconDoc },
 ]
 
 export default function Layout() {
   const navigate = useNavigate()
+  const { signOut, user } = useAuth()
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -92,12 +94,12 @@ export default function Layout() {
 
         <div className="p-3">
           <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-[#8ab8c0] hover:text-white w-full rounded-lg hover:bg-[#0d3545] transition-all duration-150"
-          >
-            <IconLogout />
-            Sair
-          </button>
+  onClick={() => { signOut(); navigate('/login') }}
+  className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-[#8ab8c0] hover:text-white w-full rounded-lg hover:bg-[#0d3545] transition-all duration-150"
+>
+  <IconLogout />
+  Sair — {user?.name ?? ''}
+</button>
         </div>
       </aside>
 
