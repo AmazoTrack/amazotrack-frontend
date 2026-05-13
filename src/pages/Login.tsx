@@ -1,78 +1,64 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import Button from '../components/Button'
-import Input from '../components/Input'
-import { useAuth } from '../contexts/AuthContext'
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import Button from '../components/Button';
+import Input from '../components/Input';
 
 export default function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const navigate = useNavigate();
 
-  const navigate = useNavigate()
-  const { signIn } = useAuth()
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setIsLoading(true)
+ const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
 
     // --- MOCK: CONTA DE TESTE ---
     if (email === 'admin@gmail.com' && password === 'admin') {
       setTimeout(() => {
-        signIn('token-fake-de-teste-12345', {
-          id: 1,
-          name: 'Admin AmazoTrack',
-          email: 'admin@gmail.com',
-        })
+        localStorage.setItem('token', 'token-fake-de-teste-12345');
+        
         if (rememberMe) {
-          localStorage.setItem('rememberMe', email)
+          localStorage.setItem('rememberMe', email);
         }
-        navigate('/dashboard')
-        setIsLoading(false)
-      }, 1000)
-      return
+        
+        navigate('/dashboard');
+        setIsLoading(false);
+      }, 1000); 
+      return; 
     }
 
     try {
-      const response = await fetch(
-        'https://amazotrack-backend-production.up.railway.app/auth/login',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        }
-      )
+      const response = await fetch('https://amazotrack-backend-production.up.railway.app/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Erro ao realizar login')
+        throw new Error(data.message || 'Erro ao realizar login');
       }
 
-      // Busca dados do usuário após login bem-sucedido
-      // Como o backend só retorna o token, criamos um user básico
-      signIn(data.token, {
-        id: 0,
-        name: email.split('@')[0],
-        email,
-      })
-
+      localStorage.setItem('token', data.token);
+      
       if (rememberMe) {
-        localStorage.setItem('rememberMe', email)
+        localStorage.setItem('rememberMe', email);
       }
 
-      navigate('/dashboard')
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Erro ao realizar login'
-      setError(message)
+      navigate('/dashboard');
+    } catch (err: any) {
+      setError(err.message);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -91,22 +77,20 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
-            {error && (
-              <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>
-            )}
+            {error && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>}
 
-            <Input
+            <Input 
               label="E-mail Corporativo"
-              type="email"
+              type="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
 
             <div className="relative">
-              <Input
+              <Input 
                 label="Senha de Acesso"
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? 'text' : 'password'} 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -132,22 +116,23 @@ export default function Login() {
 
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
+                <input 
+                  type="checkbox" 
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="rounded text-[#005F73] focus:ring-[#005F73]"
                 />
                 <span className="text-sm text-gray-600">Mantenha-me conectado</span>
               </label>
+              
               <a href="#" className="text-sm text-[#005F73] hover:text-[#004558] hover:underline font-medium">
                 Esqueceu a senha?
               </a>
             </div>
 
-            <Button type="submit" disabled={isLoading} variant="primary">
-              {isLoading ? 'Entrando...' : 'Entrar no Sistema'}
-            </Button>
+           <Button onClick={handleLogin} disabled={isLoading} variant="primary">
+            {isLoading ? 'Entrando...' : 'Entrar no Sistema'}
+           </Button>
 
             <p className="text-center text-sm text-gray-600">
               Ainda não tem conta?{' '}
@@ -159,5 +144,5 @@ export default function Login() {
         </div>
       </div>
     </div>
-  )
+  );
 }

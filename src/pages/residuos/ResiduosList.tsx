@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
 import Badge from '../../components/Badge'
@@ -66,13 +66,13 @@ type TabStatus = 'Todos' | 'Gerado' | 'Transportado'
 
 export default function ResiduosList() {
   const navigate = useNavigate()
-  const [loading] = useState(false)
-  const [residuos] = useState<Residuo[]>(mockResiduos)
+  const [loading, setLoading] = useState(false)
+  const [residuos, setResiduos] = useState<Residuo[]>(mockResiduos)
   const [statusFilter, setStatusFilter] = useState<TabStatus>('Todos')
   const [dataInicial, setDataInicial] = useState('')
   const [dataFinal, setDataFinal] = useState('')
 
-  const residuosFiltrados = residuos.filter((r) =>
+  const residuosFiltrados = residuos.filter((r) => 
     statusFilter === 'Todos' ? true : r.estadoAtual === statusFilter
   )
 
@@ -81,6 +81,7 @@ export default function ResiduosList() {
   return (
     <div className="flex flex-col h-full bg-gray-50">
       <div className="flex-1 overflow-auto p-6">
+        
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Public Sans', sans-serif" }}>
@@ -90,7 +91,7 @@ export default function ResiduosList() {
               Gerenciamento e rastreabilidade de resíduos cadastrados no sistema.
             </p>
           </div>
-          <Button onClick={() => navigate('/dashboard/residuos/cadastrar')}>
+          <Button onClick={() => navigate('/dashboard/residuos/cadastrar')} className="bg-[#005F73] hover:bg-[#004d5e] text-white">
             + Cadastrar Resíduo
           </Button>
         </div>
@@ -140,16 +141,20 @@ export default function ResiduosList() {
                   <tr key={residuo.id} className="hover:bg-gray-50/70 transition-colors">
                     <td className="px-4 py-3 font-mono text-xs font-semibold text-[#005F73]">{residuo.id}</td>
                     <td className="px-4 py-3 text-gray-800 font-medium">{residuo.descricao}</td>
-                    <td className="px-4 py-3"><Badge classe={residuo.classeNbr} /></td>
+                    <td className="px-4 py-3">
+                      <Badge classe={residuo.classeNbr} />
+                    </td>
                     <td className="px-4 py-3 text-gray-600">{residuo.setorGerador}</td>
-                    <td className="px-4 py-3"><EstadoBadge estado={residuo.estadoAtual} /></td>
+                    <td className="px-4 py-3">
+                      <EstadoBadge estado={residuo.estadoAtual} />
+                    </td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{residuo.dataCadastro}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => navigate(`/dashboard/residuos/editar/${residuo.id}`)} className="p-1.5 text-gray-400 hover:text-[#005F73] bg-gray-50 hover:bg-[#e6f4f7] rounded transition-colors">
-                          <IconEdit />
+                        <button onClick={() => navigate(`/dashboard/residuos/editar/${residuo.id}`)} className="p-1.5 text-gray-400 hover:text-[#005F73] bg-gray-50 hover:bg-[#e6f4f7] rounded transition-colors" title="Editar">
+                            <IconEdit />
                         </button>
-                        <button onClick={() => navigate(`/dashboard/residuos/${residuo.id}`)} className="p-1.5 text-gray-400 hover:text-[#005F73] bg-gray-50 hover:bg-[#e6f4f7] rounded transition-colors">
+                        <button onClick={() => navigate(`/dashboard/residuos/${residuo.id}`)} className="p-1.5 text-gray-400 hover:text-[#005F73] bg-gray-50 hover:bg-[#e6f4f7] rounded transition-colors" title="Visualizar">
                           <IconEye />
                         </button>
                       </div>
@@ -162,28 +167,56 @@ export default function ResiduosList() {
 
           <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-gray-50/50">
             <span className="text-xs text-gray-500">
-              Exibindo {residuosFiltrados.length} de {residuos.length} resíduos
+              Exibindo {residuosFiltrados.length} de 128 resíduos
             </span>
+            <div className="flex items-center gap-1">
+              {[1, 2, 3].map((page) => (
+                <button
+                  key={page}
+                  className={`w-7 h-7 text-xs rounded-md font-medium transition-colors ${
+                    page === 1 ? 'bg-[#005F73] text-white' : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              <span className="px-1 text-gray-400 text-xs">...</span>
+              <button className="w-7 h-7 text-xs rounded-md font-medium text-gray-600 hover:bg-gray-100">32</button>
+              <button className="w-7 h-7 text-xs rounded-md text-gray-500 hover:bg-gray-100 flex items-center justify-center">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white rounded-xl border border-red-100 shadow-sm p-4 border-l-4 border-l-red-500">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Riscos Elevados</p>
-            <p className="text-2xl font-bold text-red-600 mt-1">24 <span className="text-sm font-normal text-red-400">registros</span></p>
+            <p className="text-2xl font-bold text-red-600 mt-1" style={{ fontFamily: "'Public Sans', sans-serif" }}>
+              24 <span className="text-sm font-normal text-red-400">registros</span>
+            </p>
             <p className="text-xs text-gray-400 mt-1">Requerem atenção imediata</p>
           </div>
+
           <div className="bg-white rounded-xl border border-orange-100 shadow-sm p-4 border-l-4 border-l-orange-500">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Em Trânsito</p>
-            <p className="text-2xl font-bold text-orange-500 mt-1">3.5 <span className="text-sm font-normal text-orange-300">ton</span></p>
+            <p className="text-2xl font-bold text-orange-500 mt-1" style={{ fontFamily: "'Public Sans', sans-serif" }}>
+              3.5 <span className="text-sm font-normal text-orange-300">ton</span>
+            </p>
             <p className="text-xs text-gray-400 mt-1">A caminho da destinadora</p>
           </div>
+
           <div className="bg-white rounded-xl border border-green-100 shadow-sm p-4 border-l-4 border-l-green-500">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Meta Reciclagem</p>
-            <p className="text-2xl font-bold text-green-600 mt-1">78% <span className="text-sm font-normal text-green-400">atingida</span></p>
+            <p className="text-2xl font-bold text-green-600 mt-1" style={{ fontFamily: "'Public Sans', sans-serif" }}>
+              78% <span className="text-sm font-normal text-green-400">atingida</span>
+            </p>
             <p className="text-xs text-gray-400 mt-1">Objetivo mensal: 85%</p>
           </div>
         </div>
+
       </div>
     </div>
   )

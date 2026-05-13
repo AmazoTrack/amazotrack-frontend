@@ -393,7 +393,7 @@ async function handleSubmit() {
 
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 px-6 py-4 flex items-center justify-end gap-3">
-        <Button variant="secondary" onClick={() => navigate('/empresas')}>
+        <Button variant="secondary" onClick={() => navigate('/dashboard/empresas')}>
           Cancelar
         </Button>
         <Button variant="primary" onClick={handleSubmit} disabled={loading}>
