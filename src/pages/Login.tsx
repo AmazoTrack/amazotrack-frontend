@@ -46,7 +46,12 @@ export default function Login() {
         throw new Error(data.message || 'Erro ao realizar login');
       }
 
-      localStorage.setItem('token', data.token);
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify({
+          id: 4,
+          name: 'Arthur Mendes',
+          email: email,
+        }))
       
       if (rememberMe) {
         localStorage.setItem('rememberMe', email);

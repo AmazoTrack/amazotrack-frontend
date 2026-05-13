@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Badge from '../../components/Badge'
+import jsPDF from 'jspdf'
 
 type ClasseNBR = 'I' | 'II_A' | 'II_B'
 type StatusMTR = 'DESTINADO' | 'TRANSPORTADO' | 'PENDENTE' | 'CANCELADO'
@@ -131,6 +132,55 @@ export default function MTRsList() {
     return matchTab && matchBusca
   })
 
+const [menuAberto, setMenuAberto] = useState<string | null>(null)
+
+function exportarMTRsPDF() {
+  const doc = new jsPDF()
+  let y = 20
+
+  doc.setFillColor(6, 38, 48)
+  doc.rect(0, 0, 210, 22, 'F')
+  doc.setFontSize(13)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(255, 255, 255)
+  doc.text('RELATÓRIO DE MTRs — AMAZOTRACK', 14, 14)
+
+  y = 32
+  doc.setTextColor(50, 50, 50)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.setFillColor(240, 245, 248)
+  doc.rect(14, y - 5, 182, 8, 'F')
+  doc.text('Nº MTR', 16, y)
+  doc.text('Geradora', 50, y)
+  doc.text('Resíduo', 100, y)
+  doc.text('Qtd', 155, y)
+  doc.text('Status', 175, y)
+  y += 8
+
+  doc.setFont('helvetica', 'normal')
+  mtrsFiltrados.forEach((mtr) => {
+    if (y > 270) {
+      doc.addPage()
+      y = 20
+    }
+    doc.text(mtr.numero, 16, y)
+    doc.text(doc.splitTextToSize(mtr.geradora, 45)[0], 50, y)
+    doc.text(doc.splitTextToSize(mtr.residuo, 50)[0], 100, y)
+    doc.text(mtr.quantidade, 155, y)
+    doc.text(mtr.status, 175, y)
+    doc.setDrawColor(220, 220, 220)
+    doc.line(14, y + 2, 196, y + 2)
+    y += 8
+  })
+
+  doc.setFontSize(7)
+  doc.setTextColor(150, 150, 150)
+  doc.text('Documento gerado pelo sistema AmazoTrack', 105, 287, { align: 'center' })
+
+  doc.save('relatorio-mtrs.pdf')
+}
+  
   const tabs: { id: TabFiltro; label: string; count?: number }[] = [
     { id: 'todos', label: 'Todos os MTRs' },
     { id: 'pendentes', label: 'Pendentes', count: mockMTRs.filter((m) => m.status === 'PENDENTE').length },
@@ -196,16 +246,18 @@ export default function MTRsList() {
             </p>
           </div>
           <div className="flex gap-2">
-            <button className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              Exportar
-            </button>
             <button
-              onClick={() => navigate('/dashboard/empresas')}
+                  onClick={() => exportarMTRsPDF()}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  Exportar
+                </button>
+            <button
+              onClick={() => navigate('/dashboard/residuos/cadastrar')}
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-[#005F73] rounded-lg hover:bg-[#004558] transition-colors"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -282,7 +334,7 @@ export default function MTRsList() {
                 {mtrsFiltrados.map((mtr) => (
                   <tr
                     key={mtr.id}
-                    onClick={() => navigate(`/residuos/${mtr.id}`)}
+                    onClick={() => navigate(`/dashboard/residuos/${mtr.id}`)}
                     className="hover:bg-gray-50/70 transition-colors cursor-pointer"
                   >
                     <td className="px-4 py-3.5">
@@ -300,15 +352,40 @@ export default function MTRsList() {
                     <td className="px-4 py-3.5">
                       <StatusBadge status={mtr.status} />
                     </td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3.5 relative">
                       <button
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setMenuAberto(menuAberto === mtr.id ? null : mtr.id)
+                        }}
                         className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>
                         </svg>
                       </button>
+                      {menuAberto === mtr.id && (
+                        <div className="absolute right-4 top-8 z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-44">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/residuos/${mtr.id}`) }}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            Ver detalhes
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setMenuAberto(null) }}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          >
+                            Gerar MTR (PDF)
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setMenuAberto(null) }}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                          >
+                            Cancelar MTR
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

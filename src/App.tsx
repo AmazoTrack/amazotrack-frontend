@@ -11,7 +11,6 @@ import Dashboard from './pages/dashboard/Dashboard'
 import ResiduosList from './pages/residuos/ResiduosList'
 import ResiduosDetail from './pages/residuos/ResiduosDetail'
 import CadastrarResiduo from './pages/residuos/CadastrarResiduo'
-import ResiduosList from './pages/residuos/ResiduosList'
 
 function Placeholder({ title }: { title: string }) {
   return (
