@@ -21,8 +21,7 @@ interface Empresa {
 const mockEmpresas: Empresa[] = [
   { id: 1, razaoSocial: 'Indústria de Polímeros Delta S.A.', cnpj: '12.345.678/0001-90', tipo: 'GERADORA', licenca: 'LO-2023/882-A', validade: '15 Jan 2026', validadeDate: new Date('2026-01-15'), status: 'Regular' },
   { id: 2, razaoSocial: 'Reciclagem Norte Verde Ltda', cnpj: '98.765.432/0001-21', tipo: 'DESTINADORA', licenca: 'LP-2021/441-B', validade: '22 Out 2023', validadeDate: new Date('2023-10-22'), status: 'Vencido' },
-  { id: 3, razaoSocial: 'Elogística Transportes Especiais', cnpj: '45.567.890/0002-33', tipo: 'TRANSPORTADORA', licenca: 'AUT-2023/110', validade: '08 Ago 2025', validadeDate: new Date('2025-08-08'), status: 'Alerta' },
-  { id: 4, razaoSocial: 'Metalúrgica Amazon Tech', cnpj: '23.111.444/0001-00', tipo: 'GERADORA', licenca: 'LO-2024/003-B', validade: '30 Dez 2027', validadeDate: new Date('2027-12-30'), status: 'Regular' },
+  { id: 3, razaoSocial: 'Metalúrgica Amazon Tech', cnpj: '23.111.444/0001-00', tipo: 'GERADORA', licenca: 'LO-2024/003-B', validade: '30 Dez 2027', validadeDate: new Date('2027-12-30'), status: 'Regular' },
 ]
 
 function TipoBadge({ tipo }: { tipo: TipoEmpresa }) {
@@ -66,28 +65,37 @@ export default function EmpresasList() {
   const navigate = useNavigate()
   const [tabAtiva, setTabAtiva] = useState<TabFiltro>('todas')
   const [busca, setBusca] = useState('')
-  
   const [empresas, setEmpresas] = useState<Empresa[]>([])
   const [loading, setLoading] = useState(true)
+
   useEffect(() => {
     async function carregarEmpresas() {
       try {
         setLoading(true)
         const data = await apiFetch('/companies', 'GET')
-        const dadosFormatados = data.map((emp: any) => ({
+        const dadosFormatados = (data as any).data.map((emp: any) => ({
           id: emp.id,
-          razaoSocial: emp.name || emp.razaoSocial,
+          razaoSocial: emp.corporateName,
           cnpj: emp.cnpj,
-          tipo: emp.type || emp.tipo,
-          licenca: emp.license || emp.licenca,
-          validade: emp.validade || '31 Dez 2025',
-          validadeDate: new Date(),
-          status: emp.status || 'Regular'
+          tipo: emp.type.toUpperCase() as TipoEmpresa,
+          licenca: emp.licenseNumber ?? '—',
+          validade: emp.licenseExpiry
+            ? new Date(emp.licenseExpiry).toLocaleDateString('pt-BR')
+            : '—',
+          validadeDate: emp.licenseExpiry ? new Date(emp.licenseExpiry) : new Date(),
+          status: (() => {
+            if (!emp.licenseExpiry) return 'Regular' as StatusLicenca
+            const expiry = new Date(emp.licenseExpiry)
+            const now = new Date()
+            const diffDays = (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+            if (diffDays < 0) return 'Vencido' as StatusLicenca
+            if (diffDays < 90) return 'Alerta' as StatusLicenca
+            return 'Regular' as StatusLicenca
+          })(),
         }))
-        
         setEmpresas(dadosFormatados)
       } catch (error) {
-        console.error('Erro na API ou sem token JWT. Usando Mocks temporariamente.', error)
+        console.error('Erro ao carregar empresas:', error)
         setEmpresas(mockEmpresas)
       } finally {
         setLoading(false)
@@ -109,6 +117,12 @@ export default function EmpresasList() {
     return matchTab && matchBusca
   })
 
+  // Stats calculados a partir dos dados reais
+  const totalGeradoras = empresas.filter(e => e.tipo === 'GERADORA').length
+  const totalDestinadoras = empresas.filter(e => e.tipo === 'DESTINADORA').length
+  const totalVencidas = empresas.filter(e => e.status === 'Vencido').length
+  const totalAlerta = empresas.filter(e => e.status === 'Alerta').length
+
   const tabs: { id: TabFiltro; label: string }[] = [
     { id: 'todas', label: 'Todas as Empresas' },
     { id: 'geradoras', label: 'Geradoras' },
@@ -124,9 +138,7 @@ export default function EmpresasList() {
         <div className="flex items-center gap-4">
           <span className="text-[#005F73] font-semibold text-sm">Empresas</span>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              <IconSearch />
-            </span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><IconSearch /></span>
             <input
               type="text"
               placeholder="Buscar por CNPJ ou Razão..."
@@ -137,27 +149,13 @@ export default function EmpresasList() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-            <IconBell />
-          </button>
-          <button className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-            <IconSettings />
-          </button>
-          <div className="flex items-center gap-2 ml-1">
-            <div className="text-right">
-              <p className="text-xs font-semibold text-gray-800">Eng. Roberto Silva</p>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wide">Gestor Ambiental</p>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-[#005F73] text-white text-xs font-bold flex items-center justify-center">
-              RS
-            </div>
-          </div>
+          <button className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><IconBell /></button>
+          <button className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><IconSettings /></button>
+          <div className="w-8 h-8 rounded-full bg-[#005F73] text-white text-xs font-bold flex items-center justify-center ml-1">AM</div>
         </div>
       </header>
 
-      {/* Content */}
       <div className="flex-1 overflow-auto p-6">
-        {/* Page title row */}
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Public Sans', sans-serif" }}>
@@ -175,9 +173,7 @@ export default function EmpresasList() {
           </Button>
         </div>
 
-        {/* Main Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-          {/* Tabs + Filtros */}
           <div className="flex items-center justify-between px-4 pt-4 pb-0 border-b border-gray-100">
             <div className="flex gap-1">
               {tabs.map((tab) => (
@@ -200,29 +196,16 @@ export default function EmpresasList() {
             </button>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto min-h-[400px]">
+          <div className="overflow-x-auto min-h-[300px]">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Razão Social / CNPJ
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Licença Ambiental
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Validade
-                  </th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    Ações
-                  </th>
+                  <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Razão Social / CNPJ</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tipo</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Licença Ambiental</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Validade</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -235,14 +218,10 @@ export default function EmpresasList() {
                       onClick={() => navigate(`/dashboard/empresas/${empresa.id}`)}
                     >
                       <td className="px-6 py-4">
-                        <p className="font-semibold text-gray-900 group-hover:text-[#005F73] transition-colors">
-                          {empresa.razaoSocial}
-                        </p>
+                        <p className="font-semibold text-gray-900 group-hover:text-[#005F73] transition-colors">{empresa.razaoSocial}</p>
                         <p className="text-xs text-gray-400 mt-0.5">{empresa.cnpj}</p>
                       </td>
-                      <td className="px-4 py-4">
-                        <TipoBadge tipo={empresa.tipo} />
-                      </td>
+                      <td className="px-4 py-4"><TipoBadge tipo={empresa.tipo} /></td>
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-1.5 text-gray-700">
                           <span className="text-[#005F73]"><IconShield /></span>
@@ -254,17 +233,9 @@ export default function EmpresasList() {
                           {empresa.validade}
                         </span>
                       </td>
-                      <td className="px-4 py-4">
-                        <StatusBadge status={empresa.status} />
-                      </td>
+                      <td className="px-4 py-4"><StatusBadge status={empresa.status} /></td>
                       <td className="px-4 py-4 text-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Coloque a ação de editar aqui depois
-                          }}
-                          className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
+                        <button onClick={(e) => e.stopPropagation()} className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
                           <IconDots />
                         </button>
                       </td>
@@ -275,47 +246,22 @@ export default function EmpresasList() {
             </table>
           </div>
 
-          {/* Pagination footer */}
           <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-gray-50/50">
             <span className="text-xs text-gray-500">
-              Exibindo {empresasFiltradas.length} empresas
+              Exibindo {empresasFiltradas.length} de {empresas.length} empresas
             </span>
-            <div className="flex items-center gap-1">
-              {[1, 2, 3].map((page) => (
-                <button
-                  key={page}
-                  className={`w-7 h-7 text-xs rounded-md font-medium transition-colors ${
-                    page === 1
-                      ? 'bg-[#005F73] text-white'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-              <span className="px-1 text-gray-400 text-xs">...</span>
-              <button className="w-7 h-7 text-xs rounded-md font-medium text-gray-600 hover:bg-gray-100">
-                32
-              </button>
-              <button className="w-7 h-7 text-xs rounded-md text-gray-500 hover:bg-gray-100 flex items-center justify-center">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats calculados a partir dos dados reais */}
         <div className="grid grid-cols-3 gap-4 mt-4">
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Geradoras</p>
               <p className="text-3xl font-bold text-gray-900 mt-1" style={{ fontFamily: "'Public Sans', sans-serif" }}>
-                84
+                {totalGeradoras}
               </p>
-              <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="18 15 12 9 6 15"/></svg>
-                +12% este mês
-              </p>
+              <p className="text-xs text-gray-500 font-medium mt-1">cadastradas no sistema</p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-[#e6f4f7] flex items-center justify-center text-[#005F73]">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -326,11 +272,13 @@ export default function EmpresasList() {
 
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Licenças a Vencer</p>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Licenças Vencidas/Alerta</p>
               <p className="text-3xl font-bold text-gray-900 mt-1" style={{ fontFamily: "'Public Sans', sans-serif" }}>
-                07
+                {totalVencidas + totalAlerta}
               </p>
-              <p className="text-xs text-orange-500 font-medium mt-1">Ação necessária</p>
+              <p className="text-xs text-orange-500 font-medium mt-1">
+                {totalVencidas > 0 ? `${totalVencidas} vencida(s)` : 'Nenhuma vencida'}
+              </p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -342,11 +290,11 @@ export default function EmpresasList() {
 
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Abrangência Regional</p>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Destinadoras</p>
               <p className="text-3xl font-bold text-gray-900 mt-1" style={{ fontFamily: "'Public Sans', sans-serif" }}>
-                12
+                {totalDestinadoras}
               </p>
-              <p className="text-xs text-gray-500 mt-1">Estados Brasileiros atendidos</p>
+              <p className="text-xs text-gray-500 mt-1">aptas para recepção</p>
             </div>
             <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

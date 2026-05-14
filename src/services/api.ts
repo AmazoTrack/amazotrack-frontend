@@ -3,13 +3,18 @@ const BASE_URL = import.meta.env.VITE_API_URL
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
 export class ApiError extends Error {
+  status: number
+  details: Array<{ field: string; message: string }>
+
   constructor(
-    public status: number,
+    status: number,
     message: string,
-    public details: Array<{ field: string; message: string }> = []
+    details: Array<{ field: string; message: string }> = []
   ) {
     super(message)
     this.name = 'ApiError'
+    this.status = status
+    this.details = details
   }
 }
 

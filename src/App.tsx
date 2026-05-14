@@ -12,16 +12,6 @@ import ResiduosList from './pages/residuos/ResiduosList'
 import ResiduosDetail from './pages/residuos/ResiduosDetail'
 import CadastrarResiduo from './pages/residuos/CadastrarResiduo'
 
-function Placeholder({ title }: { title: string }) {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Public Sans', sans-serif" }}>
-        {title}
-      </h1>
-      <p className="text-sm text-gray-500 mt-1">Em desenvolvimento.</p>
-    </div>
-  )
-}
 
 export default function App() {
   return (

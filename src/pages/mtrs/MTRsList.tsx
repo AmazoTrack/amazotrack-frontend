@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Badge from '../../components/Badge'
 import jsPDF from 'jspdf'
+import apiFetch from '../../services/api'
 
 type ClasseNBR = 'I' | 'II_A' | 'II_B'
 type StatusMTR = 'DESTINADO' | 'TRANSPORTADO' | 'PENDENTE' | 'CANCELADO'
@@ -20,78 +21,9 @@ interface MTR {
 }
 
 const mockMTRs: MTR[] = [
-  {
-    id: '1',
-    numero: 'MTR-2024-8821',
-    geradora: 'Metalúrgica Amazon Tech',
-    destinadora: 'EcoDestino Soluções Ambientais',
-    residuo: 'Lodo de Tratamento de Efluentes',
-    classificacao: 'I',
-    quantidade: '4.500 kg',
-    dataEmissao: '10/10/2024',
-    dataMovimentacao: '12/10/2024',
-    status: 'DESTINADO',
-  },
-  {
-    id: '2',
-    numero: 'MTR-2024-8790',
-    geradora: 'Indústria de Polímeros Delta S.A.',
-    destinadora: 'Elogística Transportes Especiais',
-    residuo: 'Resíduos de Manutenção Civil',
-    classificacao: 'II_B',
-    quantidade: '12.800 kg',
-    dataEmissao: '06/10/2024',
-    dataMovimentacao: '08/10/2024',
-    status: 'TRANSPORTADO',
-  },
-  {
-    id: '3',
-    numero: 'MTR-2024-8755',
-    geradora: 'Metalúrgica Amazon Tech',
-    destinadora: 'Reciclagem Norte Verde Ltda',
-    residuo: 'Embalagens Plásticas Contaminadas',
-    classificacao: 'I',
-    quantidade: '820 kg',
-    dataEmissao: '03/10/2024',
-    dataMovimentacao: '05/10/2024',
-    status: 'DESTINADO',
-  },
-  {
-    id: '4',
-    numero: 'MTR-2024-8722',
-    geradora: 'Indústria de Polímeros Delta S.A.',
-    destinadora: 'EcoDestino Soluções Ambientais',
-    residuo: 'Escórias de Fundição',
-    classificacao: 'II_A',
-    quantidade: '25.000 kg',
-    dataEmissao: '01/10/2024',
-    dataMovimentacao: '02/10/2024',
-    status: 'DESTINADO',
-  },
-  {
-    id: '5',
-    numero: 'MTR-2024-8698',
-    geradora: 'Metalúrgica Amazon Tech',
-    destinadora: 'EcoDestino Soluções Ambientais',
-    residuo: 'Resíduos de Solda e Corte',
-    classificacao: 'I',
-    quantidade: '340 kg',
-    dataEmissao: '28/09/2024',
-    dataMovimentacao: '-',
-    status: 'PENDENTE',
-  },
-  {
-    id: '6',
-    numero: 'MTR-2024-8650',
-    geradora: 'Indústria de Polímeros Delta S.A.',
-    destinadora: 'Reciclagem Norte Verde Ltda',
-    residuo: 'Aparas Plásticas',
-    classificacao: 'II_B',
-    quantidade: '5.200 kg',
-    dataEmissao: '22/09/2024',
-    dataMovimentacao: '-',
-    status: 'CANCELADO',
-  },
+  { id: '1', numero: 'MTR-2024-8821', geradora: 'Metalúrgica Amazon Tech', destinadora: 'EcoDestino Soluções Ambientais', residuo: 'Lodo de Tratamento de Efluentes', classificacao: 'I', quantidade: '4.500 kg', dataEmissao: '10/10/2024', dataMovimentacao: '12/10/2024', status: 'DESTINADO' },
+  { id: '2', numero: 'MTR-2024-8790', geradora: 'Indústria de Polímeros Delta S.A.', destinadora: 'Elogística Transportes Especiais', residuo: 'Resíduos de Manutenção Civil', classificacao: 'II_B', quantidade: '12.800 kg', dataEmissao: '06/10/2024', dataMovimentacao: '08/10/2024', status: 'TRANSPORTADO' },
+  { id: '3', numero: 'MTR-2024-8755', geradora: 'Metalúrgica Amazon Tech', destinadora: 'Reciclagem Norte Verde Ltda', residuo: 'Embalagens Plásticas Contaminadas', classificacao: 'I', quantidade: '820 kg', dataEmissao: '03/10/2024', dataMovimentacao: '05/10/2024', status: 'DESTINADO' },
 ]
 
 function StatusBadge({ status }: { status: StatusMTR }) {
@@ -116,8 +48,35 @@ export default function MTRsList() {
   const navigate = useNavigate()
   const [tabAtiva, setTabAtiva] = useState<TabFiltro>('todos')
   const [busca, setBusca] = useState('')
+  const [mtrs, setMtrs] = useState<MTR[]>(mockMTRs)
+  const [menuAberto, setMenuAberto] = useState<string | null>(null)
 
-  const mtrsFiltrados = mockMTRs.filter((m) => {
+  useEffect(() => {
+    async function carregarMTRs() {
+      try {
+        const data = await apiFetch('/mtrs', 'GET')
+        const formatados = (data as any[]).map((m: any) => ({
+          id: String(m.id),
+          numero: m.number,
+          geradora: m.waste?.description ?? '—',
+          destinadora: m.destination?.corporateName ?? '—',
+          residuo: m.waste?.description ?? '—',
+          classificacao: (m.waste?.class ?? 'II_A') as ClasseNBR,
+          quantidade: `${m.waste?.quantity?.toLocaleString('pt-BR')} ${m.waste?.unit}`,
+          dataEmissao: new Date(m.issueDate).toLocaleDateString('pt-BR'),
+          dataMovimentacao: '—',
+          status: 'PENDENTE' as StatusMTR,
+        }))
+        setMtrs(formatados)
+      } catch (error) {
+        console.error('Erro ao carregar MTRs:', error)
+        setMtrs(mockMTRs)
+      }
+    }
+    carregarMTRs()
+  }, [])
+
+  const mtrsFiltrados = mtrs.filter((m) => {
     const matchTab =
       tabAtiva === 'todos' ||
       (tabAtiva === 'pendentes' && m.status === 'PENDENTE') ||
@@ -132,65 +91,64 @@ export default function MTRsList() {
     return matchTab && matchBusca
   })
 
-const [menuAberto, setMenuAberto] = useState<string | null>(null)
+  function exportarMTRsPDF() {
+    const doc = new jsPDF()
+    let y = 20
 
-function exportarMTRsPDF() {
-  const doc = new jsPDF()
-  let y = 20
+    doc.setFillColor(6, 38, 48)
+    doc.rect(0, 0, 210, 22, 'F')
+    doc.setFontSize(13)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(255, 255, 255)
+    doc.text('RELATÓRIO DE MTRs — AMAZOTRACK', 14, 14)
 
-  doc.setFillColor(6, 38, 48)
-  doc.rect(0, 0, 210, 22, 'F')
-  doc.setFontSize(13)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(255, 255, 255)
-  doc.text('RELATÓRIO DE MTRs — AMAZOTRACK', 14, 14)
-
-  y = 32
-  doc.setTextColor(50, 50, 50)
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'bold')
-  doc.setFillColor(240, 245, 248)
-  doc.rect(14, y - 5, 182, 8, 'F')
-  doc.text('Nº MTR', 16, y)
-  doc.text('Geradora', 50, y)
-  doc.text('Resíduo', 100, y)
-  doc.text('Qtd', 155, y)
-  doc.text('Status', 175, y)
-  y += 8
-
-  doc.setFont('helvetica', 'normal')
-  mtrsFiltrados.forEach((mtr) => {
-    if (y > 270) {
-      doc.addPage()
-      y = 20
-    }
-    doc.text(mtr.numero, 16, y)
-    doc.text(doc.splitTextToSize(mtr.geradora, 45)[0], 50, y)
-    doc.text(doc.splitTextToSize(mtr.residuo, 50)[0], 100, y)
-    doc.text(mtr.quantidade, 155, y)
-    doc.text(mtr.status, 175, y)
-    doc.setDrawColor(220, 220, 220)
-    doc.line(14, y + 2, 196, y + 2)
+    y = 32
+    doc.setTextColor(50, 50, 50)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.setFillColor(240, 245, 248)
+    doc.rect(14, y - 5, 182, 8, 'F')
+    doc.text('Nº MTR', 16, y)
+    doc.text('Geradora', 50, y)
+    doc.text('Resíduo', 100, y)
+    doc.text('Qtd', 155, y)
+    doc.text('Status', 175, y)
     y += 8
-  })
 
-  doc.setFontSize(7)
-  doc.setTextColor(150, 150, 150)
-  doc.text('Documento gerado pelo sistema AmazoTrack', 105, 287, { align: 'center' })
+    doc.setFont('helvetica', 'normal')
+    mtrsFiltrados.forEach((mtr) => {
+      if (y > 270) { doc.addPage(); y = 20 }
+      doc.text(mtr.numero, 16, y)
+      doc.text(doc.splitTextToSize(mtr.geradora, 45)[0], 50, y)
+      doc.text(doc.splitTextToSize(mtr.residuo, 50)[0], 100, y)
+      doc.text(mtr.quantidade, 155, y)
+      doc.text(mtr.status, 175, y)
+      doc.setDrawColor(220, 220, 220)
+      doc.line(14, y + 2, 196, y + 2)
+      y += 8
+    })
 
-  doc.save('relatorio-mtrs.pdf')
-}
-  
+    doc.setFontSize(7)
+    doc.setTextColor(150, 150, 150)
+    doc.text('Documento gerado pelo sistema AmazoTrack', 105, 287, { align: 'center' })
+    doc.save('relatorio-mtrs.pdf')
+  }
+
+  // Stats calculados a partir dos dados reais
+  const totalMTRs = mtrs.length
+  const totalPendentes = mtrs.filter(m => m.status === 'PENDENTE').length
+  const totalTransito = mtrs.filter(m => m.status === 'TRANSPORTADO').length
+  const totalConcluidos = mtrs.filter(m => m.status === 'DESTINADO').length
+
   const tabs: { id: TabFiltro; label: string; count?: number }[] = [
     { id: 'todos', label: 'Todos os MTRs' },
-    { id: 'pendentes', label: 'Pendentes', count: mockMTRs.filter((m) => m.status === 'PENDENTE').length },
-    { id: 'em_transito', label: 'Em Trânsito', count: mockMTRs.filter((m) => m.status === 'TRANSPORTADO').length },
-    { id: 'concluidos', label: 'Concluídos', count: mockMTRs.filter((m) => m.status === 'DESTINADO').length },
+    { id: 'pendentes', label: 'Pendentes', count: totalPendentes },
+    { id: 'em_transito', label: 'Em Trânsito', count: totalTransito },
+    { id: 'concluidos', label: 'Concluídos', count: totalConcluidos },
   ]
 
   return (
     <div className="flex flex-col h-full">
-      {/* Top Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <span className="text-[#005F73] font-semibold text-sm">MTRs</span>
@@ -216,25 +174,10 @@ function exportarMTRsPDF() {
               <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
             </svg>
           </button>
-          <button className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-          </button>
-          <div className="flex items-center gap-2 ml-1">
-            <div className="text-right">
-              <p className="text-xs font-semibold text-gray-800">Eng. Roberto Silva</p>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wide">Gestor Ambiental</p>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-[#005F73] text-white text-xs font-bold flex items-center justify-center">
-              RS
-            </div>
-          </div>
+          <div className="w-8 h-8 rounded-full bg-[#005F73] text-white text-xs font-bold flex items-center justify-center">AM</div>
         </div>
       </header>
 
-      {/* Content */}
       <div className="flex-1 overflow-auto p-6">
         <div className="flex items-start justify-between mb-6">
           <div>
@@ -247,15 +190,15 @@ function exportarMTRsPDF() {
           </div>
           <div className="flex gap-2">
             <button
-                  onClick={() => exportarMTRsPDF()}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
-                  </svg>
-                  Exportar
-                </button>
+              onClick={() => exportarMTRsPDF()}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Exportar
+            </button>
             <button
               onClick={() => navigate('/dashboard/residuos/cadastrar')}
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-[#005F73] rounded-lg hover:bg-[#004558] transition-colors"
@@ -268,25 +211,30 @@ function exportarMTRsPDF() {
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Stats calculados a partir dos dados reais */}
         <div className="grid grid-cols-4 gap-4 mb-5">
-          {[
-            { label: 'Total de MTRs', value: '128', sub: 'este mês', color: 'text-gray-900' },
-            { label: 'Pendentes', value: '03', sub: 'aguardando coleta', color: 'text-yellow-700' },
-            { label: 'Em Trânsito', value: '07', sub: 'em movimentação', color: 'text-blue-700' },
-            { label: 'Concluídos', value: '118', sub: 'destinação confirmada', color: 'text-[#005F73]' },
-          ].map((s) => (
-            <div key={s.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">{s.label}</p>
-              <p className={`text-2xl font-bold mt-1 ${s.color}`} style={{ fontFamily: "'Public Sans', sans-serif" }}>
-                {s.value}
-              </p>
-              <p className="text-xs text-gray-400 mt-0.5">{s.sub}</p>
-            </div>
-          ))}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total de MTRs</p>
+            <p className="text-2xl font-bold mt-1 text-gray-900" style={{ fontFamily: "'Public Sans', sans-serif" }}>{totalMTRs}</p>
+            <p className="text-xs text-gray-400 mt-0.5">registros no sistema</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Pendentes</p>
+            <p className="text-2xl font-bold mt-1 text-yellow-700" style={{ fontFamily: "'Public Sans', sans-serif" }}>{totalPendentes}</p>
+            <p className="text-xs text-gray-400 mt-0.5">aguardando coleta</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Em Trânsito</p>
+            <p className="text-2xl font-bold mt-1 text-blue-700" style={{ fontFamily: "'Public Sans', sans-serif" }}>{totalTransito}</p>
+            <p className="text-xs text-gray-400 mt-0.5">em movimentação</p>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Concluídos</p>
+            <p className="text-2xl font-bold mt-1 text-[#005F73]" style={{ fontFamily: "'Public Sans', sans-serif" }}>{totalConcluidos}</p>
+            <p className="text-xs text-gray-400 mt-0.5">destinação confirmada</p>
+          </div>
         </div>
 
-        {/* Table */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between px-4 pt-4 pb-0 border-b border-gray-100">
             <div className="flex gap-1">
@@ -311,12 +259,6 @@ function exportarMTRsPDF() {
                 </button>
               ))}
             </div>
-            <button className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors mb-1">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-              </svg>
-              Filtros
-            </button>
           </div>
 
           <div className="overflow-x-auto">
@@ -343,21 +285,14 @@ function exportarMTRsPDF() {
                     <td className="px-4 py-3.5 text-sm text-gray-700 max-w-[130px] truncate">{mtr.geradora}</td>
                     <td className="px-4 py-3.5 text-sm text-gray-700 max-w-[130px] truncate">{mtr.destinadora}</td>
                     <td className="px-4 py-3.5 text-sm text-gray-600 max-w-[140px] truncate">{mtr.residuo}</td>
-                    <td className="px-4 py-3.5">
-                      <Badge classe={mtr.classificacao} />
-                    </td>
+                    <td className="px-4 py-3.5"><Badge classe={mtr.classificacao} /></td>
                     <td className="px-4 py-3.5 text-sm font-medium text-gray-800 whitespace-nowrap">{mtr.quantidade}</td>
                     <td className="px-4 py-3.5 text-sm text-gray-500 whitespace-nowrap">{mtr.dataEmissao}</td>
                     <td className="px-4 py-3.5 text-sm text-gray-500 whitespace-nowrap">{mtr.dataMovimentacao}</td>
-                    <td className="px-4 py-3.5">
-                      <StatusBadge status={mtr.status} />
-                    </td>
+                    <td className="px-4 py-3.5"><StatusBadge status={mtr.status} /></td>
                     <td className="px-4 py-3.5 relative">
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setMenuAberto(menuAberto === mtr.id ? null : mtr.id)
-                        }}
+                        onClick={(e) => { e.stopPropagation(); setMenuAberto(menuAberto === mtr.id ? null : mtr.id) }}
                         className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -366,24 +301,9 @@ function exportarMTRsPDF() {
                       </button>
                       {menuAberto === mtr.id && (
                         <div className="absolute right-4 top-8 z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-44">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/residuos/${mtr.id}`) }}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                          >
-                            Ver detalhes
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setMenuAberto(null) }}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                          >
-                            Gerar MTR (PDF)
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setMenuAberto(null) }}
-                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                          >
-                            Cancelar MTR
-                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/residuos/${mtr.id}`) }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Ver detalhes</button>
+                          <button onClick={(e) => { e.stopPropagation(); setMenuAberto(null) }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Gerar MTR (PDF)</button>
+                          <button onClick={(e) => { e.stopPropagation(); setMenuAberto(null) }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Cancelar MTR</button>
                         </div>
                       )}
                     </td>
@@ -395,27 +315,8 @@ function exportarMTRsPDF() {
 
           <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-gray-50/50">
             <span className="text-xs text-gray-500">
-              Exibindo {mtrsFiltrados.length} de 128 registros
+              Exibindo {mtrsFiltrados.length} de {mtrs.length} registros
             </span>
-            <div className="flex items-center gap-1">
-              {[1, 2, 3].map((page) => (
-                <button
-                  key={page}
-                  className={`w-7 h-7 text-xs rounded-md font-medium transition-colors ${
-                    page === 1 ? 'bg-[#005F73] text-white' : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-              <span className="px-1 text-gray-400 text-xs">...</span>
-              <button className="w-7 h-7 text-xs rounded-md font-medium text-gray-600 hover:bg-gray-100">32</button>
-              <button className="w-7 h-7 text-xs rounded-md text-gray-500 hover:bg-gray-100 flex items-center justify-center">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </button>
-            </div>
           </div>
         </div>
       </div>

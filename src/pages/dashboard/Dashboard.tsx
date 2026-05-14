@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react'
+import apiFetch from '../../services/api'
 import {
   AreaChart,
   Area,
@@ -12,8 +14,6 @@ import {
   BarChart,
   Bar,
 } from 'recharts'
-
-// ── Dados mockados ──────────────────────────────────────────────────────────
 
 const evolucaoMensal = [
   { mes: 'Jan', total: 820 },
@@ -37,33 +37,10 @@ const volumePorSetor = [
 ]
 
 const ultimosMTRs = [
-  {
-    numero: '#MTR-2026-9904',
-    residuo: 'Lodo Galvânico',
-    classe: 'CLASSE I',
-    classeColor: 'bg-red-100 text-red-700',
-    destinadora: 'EcoBest Reciclagem S.A.',
-    data: '12/06/2026',
-  },
-  {
-    numero: '#MTR-2026-9902',
-    residuo: 'Papelão Prensado',
-    classe: 'CLASSE II-B',
-    classeColor: 'bg-green-100 text-green-700',
-    destinadora: 'Amazon Paper LTDA',
-    data: '11/06/2026',
-  },
-  {
-    numero: '#MTR-2026-9888',
-    residuo: 'Sucata Metálica Mix',
-    classe: 'CLASSE II-A',
-    classeColor: 'bg-yellow-100 text-yellow-700',
-    destinadora: 'Siderúrgica do Norte',
-    data: '11/06/2026',
-  },
+  { numero: '#MTR-2026-9904', residuo: 'Lodo Galvânico', classe: 'CLASSE I', classeColor: 'bg-red-100 text-red-700', destinadora: 'EcoBest Reciclagem S.A.', data: '12/06/2026' },
+  { numero: '#MTR-2026-9902', residuo: 'Papelão Prensado', classe: 'CLASSE II-B', classeColor: 'bg-green-100 text-green-700', destinadora: 'Amazon Paper LTDA', data: '11/06/2026' },
+  { numero: '#MTR-2026-9888', residuo: 'Sucata Metálica Mix', classe: 'CLASSE II-A', classeColor: 'bg-yellow-100 text-yellow-700', destinadora: 'Siderúrgica do Norte', data: '11/06/2026' },
 ]
-
-// ── Ícones ──────────────────────────────────────────────────────────────────
 
 function IconPackage() {
   return (
@@ -130,44 +107,58 @@ function IconArrowUp() {
   )
 }
 
-// ── Componente principal ─────────────────────────────────────────────────────
-
 export default function Dashboard() {
+  const [summary, setSummary] = useState<any>(null)
+  const [mtrsRecentes, setMtrsRecentes] = useState<any[]>([])
+
+  useEffect(() => {
+    async function carregarSummary() {
+      try {
+        const data = await apiFetch('/dashboard/summary', 'GET')
+        setSummary(data as any)
+      } catch (error) {
+        console.error('Erro ao carregar summary:', error)
+      }
+    }
+    carregarSummary()
+  }, [])
+
+  useEffect(() => {
+    async function carregarMTRs() {
+      try {
+        const data = await apiFetch('/mtrs', 'GET')
+        setMtrsRecentes((data as any[]).slice(0, 5))
+      } catch (error) {
+        console.error('Erro ao carregar MTRs:', error)
+      }
+    }
+    carregarMTRs()
+  }, [])
+
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
         <span className="text-[#005F73] font-semibold text-sm">Dashboard</span>
         <div className="flex items-center gap-3">
-          <button className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-            <IconBell />
-          </button>
-          <button className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-            <IconSettings />
-          </button>
+          <button className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><IconBell /></button>
+          <button className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><IconSettings /></button>
           <div className="flex items-center gap-2 ml-1">
             <div className="text-right">
               <p className="text-xs font-semibold text-gray-800">Arthur Mendes</p>
               <p className="text-[10px] text-gray-500 uppercase tracking-wide">Gestor Ambiental</p>
             </div>
-            <div className="w-8 h-8 rounded-full bg-[#005F73] text-white text-xs font-bold flex items-center justify-center">
-              AM
-            </div>
+            <div className="w-8 h-8 rounded-full bg-[#005F73] text-white text-xs font-bold flex items-center justify-center">AM</div>
           </div>
         </div>
       </header>
 
-      {/* Conteúdo */}
       <div className="flex-1 overflow-auto p-6">
-        {/* Título */}
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Public Sans', sans-serif" }}>
               Painel de Operações
             </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
-              Visão geral do ciclo de vida dos resíduos · Junho 2026
-            </p>
+            <p className="text-sm text-gray-500 mt-0.5">Visão geral do ciclo de vida dos resíduos · Junho 2026</p>
           </div>
           <button className="flex items-center gap-2 px-4 py-2 bg-[#005F73] text-white text-sm font-medium rounded-lg hover:bg-[#004d5e] transition-colors">
             <IconDownload />
@@ -175,57 +166,42 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Cards de métricas */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Total de Resíduos</p>
               <p className="text-3xl font-bold text-gray-900 mt-1" style={{ fontFamily: "'Public Sans', sans-serif" }}>
-                1.240 <span className="text-base font-normal text-gray-400">ton</span>
+                {summary?.totals?.wastes ?? '—'} <span className="text-base font-normal text-gray-400">registros</span>
               </p>
-              <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
-                <IconArrowUp />
-                +9% em relação ao mês anterior
-              </p>
+              <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1"><IconArrowUp />+9% em relação ao mês anterior</p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-[#e6f4f7] flex items-center justify-center text-[#005F73]">
-              <IconPackage />
-            </div>
+            <div className="w-10 h-10 rounded-lg bg-[#e6f4f7] flex items-center justify-center text-[#005F73]"><IconPackage /></div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-start justify-between">
             <div>
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Empresas Destinadoras</p>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Empresas Cadastradas</p>
               <p className="text-3xl font-bold text-gray-900 mt-1" style={{ fontFamily: "'Public Sans', sans-serif" }}>
-                12 <span className="text-base font-normal text-gray-400">unidades</span>
+                {summary?.totals?.companies ?? '—'} <span className="text-base font-normal text-gray-400">unidades</span>
               </p>
               <p className="text-xs text-gray-500 font-medium mt-1">0% — estável</p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
-              <IconBuilding />
-            </div>
+            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500"><IconBuilding /></div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">MTRs Gerados</p>
               <p className="text-3xl font-bold text-gray-900 mt-1" style={{ fontFamily: "'Public Sans', sans-serif" }}>
-                450 <span className="text-base font-normal text-gray-400">documentos</span>
+                {summary?.totals?.movements ?? '—'} <span className="text-base font-normal text-gray-400">documentos</span>
               </p>
-              <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
-                <IconArrowUp />
-                +6,4% — acima da meta
-              </p>
+              <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1"><IconArrowUp />+6,4% — acima da meta</p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
-              <IconDoc />
-            </div>
+            <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600"><IconDoc /></div>
           </div>
         </div>
 
-        {/* Gráficos */}
         <div className="grid grid-cols-2 gap-4 mb-6">
-          {/* Gráfico 1 — Evolução Mensal (Area) */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -248,16 +224,12 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
-                  formatter={(v: unknown) => [`${Number(v)} ton`, 'Total']}
-                />
+                <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }} formatter={(v: unknown) => [`${Number(v)} ton`, 'Total']} />
                 <Area type="monotone" dataKey="total" stroke="#005F73" strokeWidth={2} fill="url(#colorTotal)" dot={{ r: 3, fill: '#005F73' }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Gráfico 2 — Volume por Classe (Pie) */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <div className="mb-4">
               <h2 className="text-sm font-semibold text-gray-800">Volume por Classe</h2>
@@ -266,15 +238,7 @@ export default function Dashboard() {
             <div className="flex items-center gap-4">
               <ResponsiveContainer width="55%" height={180}>
                 <PieChart>
-                  <Pie
-                    data={volumePorClasse}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={52}
-                    outerRadius={78}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
+                  <Pie data={volumePorClasse} cx="50%" cy="50%" innerRadius={52} outerRadius={78} paddingAngle={3} dataKey="value">
                     {volumePorClasse.map((entry, index) => (
                       <Cell key={index} fill={entry.color} />
                     ))}
@@ -297,7 +261,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Gráfico 3 — Volume por Setor (Bar horizontal) */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 mb-6">
           <div className="mb-4">
             <h2 className="text-sm font-semibold text-gray-800">Volume por Setor Gerador</h2>
@@ -308,16 +271,12 @@ export default function Dashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
               <XAxis type="number" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} unit=" ton" />
               <YAxis type="category" dataKey="setor" tick={{ fontSize: 12, fill: '#4b5563' }} axisLine={false} tickLine={false} width={80} />
-              <Tooltip
-                contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }}
-                formatter={(v: unknown) => [`${Number(v)} ton`, 'Volume']}
-              />
+              <Tooltip contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 12 }} formatter={(v: unknown) => [`${Number(v)} ton`, 'Volume']} />
               <Bar dataKey="volume" fill="#005F73" radius={[0, 4, 4, 0]} barSize={20} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Últimos MTRs */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <h2 className="text-sm font-semibold text-gray-800">Últimos MTRs Emitidos</h2>
@@ -335,14 +294,31 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {ultimosMTRs.map((mtr) => (
+                {mtrsRecentes.length > 0 ? mtrsRecentes.map((mtr: any) => {
+                  const classeColor = mtr.waste?.class === 'I'
+                    ? 'bg-red-100 text-red-700'
+                    : mtr.waste?.class === 'II_A'
+                    ? 'bg-yellow-100 text-yellow-700'
+                    : 'bg-green-100 text-green-700'
+                  return (
+                    <tr key={mtr.id} className="hover:bg-gray-50/70 transition-colors cursor-pointer">
+                      <td className="px-5 py-3 font-mono text-xs font-semibold text-[#005F73]">{mtr.number}</td>
+                      <td className="px-4 py-3 text-gray-700">{mtr.waste?.description ?? '—'}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-0.5 rounded text-[11px] font-bold tracking-wide uppercase ${classeColor}`}>
+                          {mtr.waste?.class === 'I' ? 'CLASSE I' : mtr.waste?.class === 'II_A' ? 'CLASSE II-A' : 'CLASSE II-B'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{mtr.destination?.corporateName ?? '—'}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{new Date(mtr.issueDate).toLocaleDateString('pt-BR')}</td>
+                    </tr>
+                  )
+                }) : ultimosMTRs.map((mtr) => (
                   <tr key={mtr.numero} className="hover:bg-gray-50/70 transition-colors cursor-pointer">
                     <td className="px-5 py-3 font-mono text-xs font-semibold text-[#005F73]">{mtr.numero}</td>
                     <td className="px-4 py-3 text-gray-700">{mtr.residuo}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold tracking-wide uppercase ${mtr.classeColor}`}>
-                        {mtr.classe}
-                      </span>
+                      <span className={`px-2 py-0.5 rounded text-[11px] font-bold tracking-wide uppercase ${mtr.classeColor}`}>{mtr.classe}</span>
                     </td>
                     <td className="px-4 py-3 text-gray-600">{mtr.destinadora}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{mtr.data}</td>

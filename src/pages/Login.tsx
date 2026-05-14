@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState} from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Button from '../components/Button';
 import Input from '../components/Input';
@@ -135,7 +135,7 @@ export default function Login() {
               </a>
             </div>
 
-           <Button onClick={handleLogin} disabled={isLoading} variant="primary">
+           <Button type="submit" disabled={isLoading} variant="primary">
             {isLoading ? 'Entrando...' : 'Entrar no Sistema'}
            </Button>
 
