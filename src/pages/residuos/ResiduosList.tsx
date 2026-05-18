@@ -5,6 +5,7 @@ import Badge from '../../components/Badge'
 import Input from '../../components/Input'
 import Loading from '../../components/Loading'
 import apiFetch from '../../services/api'
+import type { PaginatedResponse, Waste } from '../../types'
 
 type ClasseNBR = 'I' | 'II_A' | 'II_B'
 type EstadoAtual = 'Gerado' | 'Transportado' | 'Coletado' | 'Destinado'
@@ -74,8 +75,8 @@ export default function ResiduosList() {
     async function carregarResiduos() {
       try {
         setLoading(true)
-        const data = await apiFetch('/wastes', 'GET')
-        const formatados = (data as any).data.map((w: any) => ({
+        const data = await apiFetch<PaginatedResponse<Waste>>('/wastes', 'GET')
+        const formatados = data.data.map((w) => ({
           id: String(w.id),
           descricao: w.description,
           classeNbr: w.class as ClasseNBR,

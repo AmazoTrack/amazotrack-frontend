@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
 import Badge from '../../components/Badge'
 import { useParams } from 'react-router-dom'
+import { companyService } from '../../services/company.service'
+import { mtrService } from '../../services/mtr.service'
+import type { Company, MTR as ApiMTR, WasteStatus } from '../../types'
 
 type ClasseNBR = 'I' | 'II_A' | 'II_B'
 type StatusMTR = 'DESTINADO' | 'TRANSPORTADO' | 'PENDENTE'
@@ -57,6 +60,24 @@ const mockMTRs: MTREntry[] = [
   },
 ]
 
+function mapWasteStatus(status?: WasteStatus): StatusMTR {
+  if (status === 'destinado') return 'DESTINADO'
+  if (status === 'transportado' || status === 'coletado') return 'TRANSPORTADO'
+  return 'PENDENTE'
+}
+
+function formatMTR(mtr: ApiMTR): MTREntry {
+  return {
+    id: String(mtr.id),
+    numero: mtr.number,
+    residuo: mtr.waste?.description ?? '—',
+    classificacao: (mtr.waste?.class ?? 'II_A') as ClasseNBR,
+    quantidade: mtr.waste ? `${mtr.waste.quantity.toLocaleString('pt-BR')} ${mtr.waste.unit}` : '—',
+    dataEntrada: new Date(mtr.issueDate).toLocaleDateString('pt-BR'),
+    status: mapWasteStatus(mtr.waste?.status),
+  }
+}
+
 function StatusMTRBadge({ status }: { status: StatusMTR }) {
   const colorMap: Record<StatusMTR, string> = {
     DESTINADO: 'text-[#005F73] bg-[#e6f4f7] border border-[#b3dde6]',
@@ -98,23 +119,53 @@ export default function EmpresaDetail() {
   const navigate = useNavigate()
   const [filtraMTR, setFiltraMTR] = useState('')
   const { id } = useParams<{ id: string }>()
-  const [company, setCompany] = useState<any>(null)
+  const [company, setCompany] = useState<Company | null>(null)
+  const [mtrs, setMtrs] = useState<MTREntry[]>([])
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    fetch(`https://amazotrack-backend-production.up.railway.app/companies/${id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(r => r.json())
-      .then(data => setCompany(data))
+    let isMounted = true
+
+    async function loadCompany() {
+      if (!id) return
+
+      try {
+        setError('')
+        const companyId = Number(id)
+        const [companyData, mtrData] = await Promise.all([
+          companyService.findById(companyId),
+          mtrService.list(),
+        ])
+
+        if (!isMounted) return
+
+        setCompany(companyData)
+        setMtrs(mtrData.filter((mtr) => mtr.destinationId === companyId).map(formatMTR))
+      } catch (err) {
+        console.error('Erro ao carregar empresa:', err)
+        if (!isMounted) return
+        setError('Não foi possível carregar os dados da empresa.')
+        setMtrs(mockMTRs)
+      }
+    }
+
+    loadCompany()
+
+    return () => {
+      isMounted = false
+    }
   }, [id])
-  const mtrsFiltrados = mockMTRs.filter(
+
+  const mtrsFiltrados = mtrs.filter(
     (m) =>
       filtraMTR === '' ||
       m.numero.toLowerCase().includes(filtraMTR.toLowerCase()) ||
       m.residuo.toLowerCase().includes(filtraMTR.toLowerCase())
   )
+
+  if (!company && error) return <div className="p-6 text-red-600">{error}</div>
   if (!company) return <div className="p-6 text-gray-500">Carregando...</div>
+
   return (
     <div className="flex flex-col h-full">
       {/* Top Header */}
@@ -156,7 +207,7 @@ export default function EmpresaDetail() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="px-2.5 py-1 bg-[#005F73] text-white text-[11px] font-bold uppercase tracking-wide rounded-md">
-                      Destinadora Final
+                      {company.type === 'destinadora' ? 'Destinadora Final' : 'Geradora'}
                     </span>
                     <span className="px-2.5 py-1 bg-green-100 text-green-700 text-[11px] font-bold uppercase tracking-wide rounded-md">
                       Ativo
@@ -186,10 +237,10 @@ export default function EmpresaDetail() {
                       </p>
                       <p className="text-sm text-gray-700">{company?.phone ?? 'Não informado'}</p>
                       <a
-                        href={company?.email ?? 'Não informado'}
+                        href={company.email ? `mailto:${company.email}` : undefined}
                         className="text-sm text-[#005F73] hover:underline mt-0.5 block"
                       >
-                        {company?.email ?? 'Não informado'}
+                        {company.email ?? 'Não informado'}
                       </a>
                     </div>
                   </div>
@@ -276,7 +327,7 @@ export default function EmpresaDetail() {
 
               <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50/50">
                 <span className="text-xs text-gray-500">
-                  Exibindo {mtrsFiltrados.length} de 128 registros
+                  Exibindo {mtrsFiltrados.length} de {mtrs.length} registros
                 </span>
                 <div className="flex gap-2">
                   <button className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">

@@ -1,7 +1,10 @@
-import { useState} from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import apiFetch, { ApiError } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import type { AuthResponse } from '../types';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -12,54 +15,34 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   
   const navigate = useNavigate();
+  const { signIn } = useAuth();
 
  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    // --- MOCK: CONTA DE TESTE ---
-    if (email === 'admin@gmail.com' && password === 'admin') {
-      setTimeout(() => {
-        localStorage.setItem('token', 'token-fake-de-teste-12345');
-        
-        if (rememberMe) {
-          localStorage.setItem('rememberMe', email);
-        }
-        
-        navigate('/dashboard');
-        setIsLoading(false);
-      }, 1000); 
-      return; 
-    }
-
     try {
-      const response = await fetch('https://amazotrack-backend-production.up.railway.app/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      const data = await apiFetch<AuthResponse>(
+        '/auth/login',
+        'POST',
+        { email, password },
+        { emitSessionExpired: false },
+      )
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Erro ao realizar login');
-      }
-
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify({
-          id: 4,
-          name: 'Arthur Mendes',
-          email: email,
-        }))
+      signIn(data.token, {
+        id: 0,
+        name: email.split('@')[0] || 'Usuário',
+        email,
+      })
       
       if (rememberMe) {
         localStorage.setItem('rememberMe', email);
       }
 
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof ApiError || err instanceof Error ? err.message : 'Erro ao realizar login');
     } finally {
       setIsLoading(false);
     }

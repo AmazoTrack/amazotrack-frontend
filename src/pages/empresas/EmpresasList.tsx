@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
 import Loading from '../../components/Loading'
 import apiFetch from '../../services/api'
+import type { Company, PaginatedResponse } from '../../types'
 
 type TipoEmpresa = 'GERADORA' | 'DESTINADORA' | 'TRANSPORTADORA'
 type StatusLicenca = 'Regular' | 'Vencido' | 'Alerta'
@@ -72,8 +73,8 @@ export default function EmpresasList() {
     async function carregarEmpresas() {
       try {
         setLoading(true)
-        const data = await apiFetch('/companies', 'GET')
-        const dadosFormatados = (data as any).data.map((emp: any) => ({
+        const data = await apiFetch<PaginatedResponse<Company>>('/companies', 'GET')
+        const dadosFormatados = data.data.map((emp) => ({
           id: emp.id,
           razaoSocial: emp.corporateName,
           cnpj: emp.cnpj,

@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import Badge from '../../components/Badge'
 import jsPDF from 'jspdf'
 import apiFetch from '../../services/api'
+import type { MTR as ApiMTR, WasteStatus } from '../../types'
 
 type ClasseNBR = 'I' | 'II_A' | 'II_B'
 type StatusMTR = 'DESTINADO' | 'TRANSPORTADO' | 'PENDENTE' | 'CANCELADO'
 
 interface MTR {
   id: string
+  wasteId: number
   numero: string
   geradora: string
   destinadora: string
@@ -21,10 +23,16 @@ interface MTR {
 }
 
 const mockMTRs: MTR[] = [
-  { id: '1', numero: 'MTR-2024-8821', geradora: 'Metalúrgica Amazon Tech', destinadora: 'EcoDestino Soluções Ambientais', residuo: 'Lodo de Tratamento de Efluentes', classificacao: 'I', quantidade: '4.500 kg', dataEmissao: '10/10/2024', dataMovimentacao: '12/10/2024', status: 'DESTINADO' },
-  { id: '2', numero: 'MTR-2024-8790', geradora: 'Indústria de Polímeros Delta S.A.', destinadora: 'Elogística Transportes Especiais', residuo: 'Resíduos de Manutenção Civil', classificacao: 'II_B', quantidade: '12.800 kg', dataEmissao: '06/10/2024', dataMovimentacao: '08/10/2024', status: 'TRANSPORTADO' },
-  { id: '3', numero: 'MTR-2024-8755', geradora: 'Metalúrgica Amazon Tech', destinadora: 'Reciclagem Norte Verde Ltda', residuo: 'Embalagens Plásticas Contaminadas', classificacao: 'I', quantidade: '820 kg', dataEmissao: '03/10/2024', dataMovimentacao: '05/10/2024', status: 'DESTINADO' },
+  { id: '1', wasteId: 1, numero: 'MTR-2024-8821', geradora: 'Metalúrgica Amazon Tech', destinadora: 'EcoDestino Soluções Ambientais', residuo: 'Lodo de Tratamento de Efluentes', classificacao: 'I', quantidade: '4.500 kg', dataEmissao: '10/10/2024', dataMovimentacao: '12/10/2024', status: 'DESTINADO' },
+  { id: '2', wasteId: 2, numero: 'MTR-2024-8790', geradora: 'Indústria de Polímeros Delta S.A.', destinadora: 'Elogística Transportes Especiais', residuo: 'Resíduos de Manutenção Civil', classificacao: 'II_B', quantidade: '12.800 kg', dataEmissao: '06/10/2024', dataMovimentacao: '08/10/2024', status: 'TRANSPORTADO' },
+  { id: '3', wasteId: 3, numero: 'MTR-2024-8755', geradora: 'Metalúrgica Amazon Tech', destinadora: 'Reciclagem Norte Verde Ltda', residuo: 'Embalagens Plásticas Contaminadas', classificacao: 'I', quantidade: '820 kg', dataEmissao: '03/10/2024', dataMovimentacao: '05/10/2024', status: 'DESTINADO' },
 ]
+
+function mapWasteStatus(status?: WasteStatus): StatusMTR {
+  if (status === 'destinado') return 'DESTINADO'
+  if (status === 'transportado' || status === 'coletado') return 'TRANSPORTADO'
+  return 'PENDENTE'
+}
 
 function StatusBadge({ status }: { status: StatusMTR }) {
   const map: Record<StatusMTR, { color: string; dot: string }> = {
@@ -54,18 +62,19 @@ export default function MTRsList() {
   useEffect(() => {
     async function carregarMTRs() {
       try {
-        const data = await apiFetch('/mtrs', 'GET')
-        const formatados = (data as any[]).map((m: any) => ({
+        const data = await apiFetch<ApiMTR[]>('/mtrs', 'GET')
+        const formatados = data.map((m) => ({
           id: String(m.id),
+          wasteId: m.wasteId,
           numero: m.number,
-          geradora: m.waste?.description ?? '—',
+          geradora: m.waste?.companyId ? `Empresa #${m.waste.companyId}` : '—',
           destinadora: m.destination?.corporateName ?? '—',
           residuo: m.waste?.description ?? '—',
           classificacao: (m.waste?.class ?? 'II_A') as ClasseNBR,
-          quantidade: `${m.waste?.quantity?.toLocaleString('pt-BR')} ${m.waste?.unit}`,
+          quantidade: m.waste ? `${m.waste.quantity.toLocaleString('pt-BR')} ${m.waste.unit}` : '—',
           dataEmissao: new Date(m.issueDate).toLocaleDateString('pt-BR'),
           dataMovimentacao: '—',
-          status: 'PENDENTE' as StatusMTR,
+          status: mapWasteStatus(m.waste?.status),
         }))
         setMtrs(formatados)
       } catch (error) {
@@ -276,7 +285,7 @@ export default function MTRsList() {
                 {mtrsFiltrados.map((mtr) => (
                   <tr
                     key={mtr.id}
-                    onClick={() => navigate(`/dashboard/residuos/${mtr.id}`)}
+                    onClick={() => navigate(`/dashboard/residuos/${mtr.wasteId}`)}
                     className="hover:bg-gray-50/70 transition-colors cursor-pointer"
                   >
                     <td className="px-4 py-3.5">
@@ -301,7 +310,7 @@ export default function MTRsList() {
                       </button>
                       {menuAberto === mtr.id && (
                         <div className="absolute right-4 top-8 z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-44">
-                          <button onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/residuos/${mtr.id}`) }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Ver detalhes</button>
+                          <button onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/residuos/${mtr.wasteId}`) }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Ver detalhes</button>
                           <button onClick={(e) => { e.stopPropagation(); setMenuAberto(null) }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Gerar MTR (PDF)</button>
                           <button onClick={(e) => { e.stopPropagation(); setMenuAberto(null) }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Cancelar MTR</button>
                         </div>

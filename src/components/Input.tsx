@@ -1,3 +1,5 @@
+import { useId } from 'react'
+
 interface InputProps {
   label?: string
   placeholder?: string
@@ -19,14 +21,17 @@ export default function Input({
   required = false,
   className = ""     // 2. Recebemos ele aqui (vazio por padrão)
 }: InputProps) {
+  const inputId = useId()
+
   return (
     <div className="flex flex-col gap-1">
       {label && (
-        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+        <label htmlFor={inputId} className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
           {label}
         </label>
       )}
       <input
+        id={inputId}
         type={type}        
         required={required}   
         value={value}

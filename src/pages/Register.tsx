@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Button from '../components/Button';
 import Input from '../components/Input';
+import apiFetch, { ApiError } from '../services/api';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -31,31 +32,17 @@ export default function Register() {
 
     setIsLoading(true);
 
-    // --- MOCK
-    if (email === 'admin@gmail.com') {
-      setTimeout(() => {
-        navigate('/login');
-        setIsLoading(false);
-      }, 1000);
-      return;
-    }
-
     try {
-      const response = await fetch('https://amazotrack-backend-production.up.railway.app/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Erro ao criar conta');
-      }
+      await apiFetch(
+        '/auth/register',
+        'POST',
+        { name, email, password },
+        { emitSessionExpired: false },
+      )
 
       navigate('/login');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof ApiError || err instanceof Error ? err.message : 'Erro ao criar conta');
     } finally {
       setIsLoading(false);
     }

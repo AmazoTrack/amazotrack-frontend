@@ -1,5 +1,3 @@
-const BASE_URL = import.meta.env.VITE_API_URL
-
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
 export class ApiError extends Error {
@@ -21,19 +19,32 @@ export class ApiError extends Error {
 // Evento customizado para sessão expirada — AuthContext vai escutar isso
 export const SESSION_EXPIRED_EVENT = 'amazotrack:session-expired'
 
+interface ApiFetchOptions {
+  emitSessionExpired?: boolean
+}
+
+export function getApiUrl(endpoint: string) {
+  const baseUrl = import.meta.env.VITE_API_URL
+
+  if (!baseUrl) {
+    throw new ApiError(0, 'VITE_API_URL não configurada')
+  }
+
+  const normalizedBase = baseUrl.replace(/\/$/, '')
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+
+  return `${normalizedBase}${normalizedEndpoint}`
+}
+
 async function apiFetch<T = unknown>(
   endpoint: string,
   method: HttpMethod = 'GET',
-  body?: object
+  body?: object,
+  options: ApiFetchOptions = {}
 ): Promise<T> {
   const token = localStorage.getItem('token')
 
-  if (token === 'token-fake-de-teste-12345') {
-    console.log('[apiFetch] Mock detectado — abortando chamada real')
-    throw new ApiError(0, 'Usando dados de demonstração')
-  }
-
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  const response = await fetch(getApiUrl(endpoint), {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -43,18 +54,18 @@ async function apiFetch<T = unknown>(
   })
 
   // Token expirado — emite evento, AuthContext cuida do redirect
-  if (response.status === 401) {
+  if (response.status === 401 && options.emitSessionExpired !== false) {
     window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT))
     throw new ApiError(401, 'Sessão expirada. Faça login novamente.')
   }
 
-  const data = await response.json()
+  const data = response.status === 204 ? null : await response.json()
 
   if (!response.ok) {
     throw new ApiError(
       response.status,
-      data.message ?? 'Erro na requisição',
-      data.details ?? []
+      data?.message ?? 'Erro na requisição',
+      data?.details ?? []
     )
   }
 

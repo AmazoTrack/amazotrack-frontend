@@ -14,6 +14,7 @@ import {
   BarChart,
   Bar,
 } from 'recharts'
+import type { DashboardSummary, MTR } from '../../types'
 
 const evolucaoMensal = [
   { mes: 'Jan', total: 820 },
@@ -108,14 +109,14 @@ function IconArrowUp() {
 }
 
 export default function Dashboard() {
-  const [summary, setSummary] = useState<any>(null)
-  const [mtrsRecentes, setMtrsRecentes] = useState<any[]>([])
+  const [summary, setSummary] = useState<DashboardSummary | null>(null)
+  const [mtrsRecentes, setMtrsRecentes] = useState<MTR[]>([])
 
   useEffect(() => {
     async function carregarSummary() {
       try {
-        const data = await apiFetch('/dashboard/summary', 'GET')
-        setSummary(data as any)
+        const data = await apiFetch<DashboardSummary>('/dashboard/summary', 'GET')
+        setSummary(data)
       } catch (error) {
         console.error('Erro ao carregar summary:', error)
       }
@@ -126,8 +127,8 @@ export default function Dashboard() {
   useEffect(() => {
     async function carregarMTRs() {
       try {
-        const data = await apiFetch('/mtrs', 'GET')
-        setMtrsRecentes((data as any[]).slice(0, 5))
+        const data = await apiFetch<MTR[]>('/mtrs', 'GET')
+        setMtrsRecentes(data.slice(0, 5))
       } catch (error) {
         console.error('Erro ao carregar MTRs:', error)
       }
@@ -294,7 +295,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {mtrsRecentes.length > 0 ? mtrsRecentes.map((mtr: any) => {
+                {mtrsRecentes.length > 0 ? mtrsRecentes.map((mtr) => {
                   const classeColor = mtr.waste?.class === 'I'
                     ? 'bg-red-100 text-red-700'
                     : mtr.waste?.class === 'II_A'
