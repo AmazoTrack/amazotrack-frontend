@@ -19,12 +19,6 @@ interface Empresa {
   status: StatusLicenca
 }
 
-const mockEmpresas: Empresa[] = [
-  { id: 1, razaoSocial: 'Indústria de Polímeros Delta S.A.', cnpj: '12.345.678/0001-90', tipo: 'GERADORA', licenca: 'LO-2023/882-A', validade: '15 Jan 2026', validadeDate: new Date('2026-01-15'), status: 'Regular' },
-  { id: 2, razaoSocial: 'Reciclagem Norte Verde Ltda', cnpj: '98.765.432/0001-21', tipo: 'DESTINADORA', licenca: 'LP-2021/441-B', validade: '22 Out 2023', validadeDate: new Date('2023-10-22'), status: 'Vencido' },
-  { id: 3, razaoSocial: 'Metalúrgica Amazon Tech', cnpj: '23.111.444/0001-00', tipo: 'GERADORA', licenca: 'LO-2024/003-B', validade: '30 Dez 2027', validadeDate: new Date('2027-12-30'), status: 'Regular' },
-]
-
 function TipoBadge({ tipo }: { tipo: TipoEmpresa }) {
   const map: Record<TipoEmpresa, string> = {
     GERADORA: 'bg-red-50 text-red-700 border border-red-200',
@@ -68,11 +62,15 @@ export default function EmpresasList() {
   const [busca, setBusca] = useState('')
   const [empresas, setEmpresas] = useState<Empresa[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [menuAberto, setMenuAberto] = useState<number | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => {
     async function carregarEmpresas() {
       try {
         setLoading(true)
+        setError('')
         const data = await apiFetch<PaginatedResponse<Company>>('/companies', 'GET')
         const dadosFormatados = data.data.map((emp) => ({
           id: emp.id,
@@ -97,7 +95,8 @@ export default function EmpresasList() {
         setEmpresas(dadosFormatados)
       } catch (error) {
         console.error('Erro ao carregar empresas:', error)
-        setEmpresas(mockEmpresas)
+        setError('Não foi possível carregar as empresas da API.')
+        setEmpresas([])
       } finally {
         setLoading(false)
       }
@@ -151,7 +150,22 @@ export default function EmpresasList() {
         </div>
         <div className="flex items-center gap-3">
           <button className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><IconBell /></button>
-          <button className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><IconSettings /></button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setSettingsOpen((open) => !open)}
+              className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Configurações"
+            >
+              <IconSettings />
+            </button>
+            {settingsOpen && (
+              <div className="absolute right-0 top-9 z-50 w-56 rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-600 shadow-lg">
+                <p className="font-semibold text-gray-800">Configurações</p>
+                <p className="mt-1">Listagem conectada ao Railway.</p>
+              </div>
+            )}
+          </div>
           <div className="w-8 h-8 rounded-full bg-[#005F73] text-white text-xs font-bold flex items-center justify-center ml-1">AM</div>
         </div>
       </header>
@@ -175,6 +189,11 @@ export default function EmpresasList() {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+          {error && (
+            <div className="px-4 py-3 text-sm text-red-600 bg-red-50 border-b border-red-100">
+              {error}
+            </div>
+          )}
           <div className="flex items-center justify-between px-4 pt-4 pb-0 border-b border-gray-100">
             <div className="flex gap-1">
               {tabs.map((tab) => (
@@ -235,14 +254,50 @@ export default function EmpresasList() {
                         </span>
                       </td>
                       <td className="px-4 py-4"><StatusBadge status={empresa.status} /></td>
-                      <td className="px-4 py-4 text-center">
-                        <button onClick={(e) => e.stopPropagation()} className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                      <td className="px-4 py-4 text-center relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setMenuAberto(menuAberto === empresa.id ? null : empresa.id)
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                          aria-label={`Ações de ${empresa.razaoSocial}`}
+                        >
                           <IconDots />
                         </button>
+                        {menuAberto === empresa.id && (
+                          <div className="absolute right-4 top-10 z-50 w-44 rounded-lg border border-gray-200 bg-white py-1 text-left shadow-lg">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate(`/dashboard/empresas/${empresa.id}`)
+                              }}
+                              className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            >
+                              Ver detalhes
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                navigate('/dashboard/empresas/nova')
+                              }}
+                              className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            >
+                              Cadastrar nova
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   )
                 })}
+                {empresasFiltradas.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-6 text-center text-sm text-gray-500">
+                      Nenhuma empresa encontrada.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

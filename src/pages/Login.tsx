@@ -113,9 +113,13 @@ export default function Login() {
                 <span className="text-sm text-gray-600">Mantenha-me conectado</span>
               </label>
               
-              <a href="#" className="text-sm text-[#005F73] hover:text-[#004558] hover:underline font-medium">
+              <button
+                type="button"
+                onClick={() => setError('Recuperação de senha ainda não está disponível no MVP.')}
+                className="text-sm text-[#005F73] hover:text-[#004558] hover:underline font-medium"
+              >
                 Esqueceu a senha?
-              </a>
+              </button>
             </div>
 
            <Button type="submit" disabled={isLoading} variant="primary">

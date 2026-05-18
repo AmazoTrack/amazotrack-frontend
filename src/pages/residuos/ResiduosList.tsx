@@ -21,12 +21,6 @@ interface Residuo {
   unit: string
 }
 
-const mockResiduos: Residuo[] = [
-  { id: 'RES-001', descricao: 'Lodo Galvânico', classeNbr: 'I', setorGerador: 'Eletroeletrônico', estadoAtual: 'Gerado', dataCadastro: '10/05/2026', quantidade: 450, unit: 'kg' },
-  { id: 'RES-002', descricao: 'Papelão Prensado', classeNbr: 'II_B', setorGerador: 'Logística', estadoAtual: 'Transportado', dataCadastro: '09/05/2026', quantidade: 1200, unit: 'kg' },
-  { id: 'RES-003', descricao: 'Óleo Lubrificante Usado', classeNbr: 'I', setorGerador: 'Manutenção', estadoAtual: 'Destinado', dataCadastro: '08/05/2026', quantidade: 200, unit: 'L' },
-]
-
 function IconEdit() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -61,12 +55,23 @@ function EstadoBadge({ estado }: { estado: EstadoAtual }) {
   )
 }
 
-type TabStatus = 'Todos' | 'Gerado' | 'Transportado'
+type TabStatus = 'Todos' | EstadoAtual
+
+function formatStatus(status: Waste['status']): EstadoAtual {
+  const map: Record<Waste['status'], EstadoAtual> = {
+    gerado: 'Gerado',
+    coletado: 'Coletado',
+    transportado: 'Transportado',
+    destinado: 'Destinado',
+  }
+  return map[status]
+}
 
 export default function ResiduosList() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
-  const [residuos, setResiduos] = useState<Residuo[]>(mockResiduos)
+  const [residuos, setResiduos] = useState<Residuo[]>([])
+  const [error, setError] = useState('')
   const [statusFilter, setStatusFilter] = useState<TabStatus>('Todos')
   const [dataInicial, setDataInicial] = useState('')
   const [dataFinal, setDataFinal] = useState('')
@@ -75,13 +80,14 @@ export default function ResiduosList() {
     async function carregarResiduos() {
       try {
         setLoading(true)
+        setError('')
         const data = await apiFetch<PaginatedResponse<Waste>>('/wastes', 'GET')
         const formatados = data.data.map((w) => ({
           id: String(w.id),
           descricao: w.description,
           classeNbr: w.class as ClasseNBR,
           setorGerador: w.sector,
-          estadoAtual: w.status.charAt(0).toUpperCase() + w.status.slice(1) as EstadoAtual,
+          estadoAtual: formatStatus(w.status),
           dataCadastro: new Date(w.createdAt).toLocaleDateString('pt-BR'),
           quantidade: w.quantity ?? 0,
           unit: w.unit ?? 'kg',
@@ -89,7 +95,8 @@ export default function ResiduosList() {
         setResiduos(formatados)
       } catch (error) {
         console.error('Erro ao carregar resíduos:', error)
-        setResiduos(mockResiduos)
+        setError('Não foi possível carregar os resíduos da API.')
+        setResiduos([])
       } finally {
         setLoading(false)
       }
@@ -97,9 +104,14 @@ export default function ResiduosList() {
     carregarResiduos()
   }, [])
 
-  const residuosFiltrados = residuos.filter((r) =>
-    statusFilter === 'Todos' ? true : r.estadoAtual === statusFilter
-  )
+  const residuosFiltrados = residuos.filter((r) => {
+    const matchStatus = statusFilter === 'Todos' ? true : r.estadoAtual === statusFilter
+    const [day, month, year] = r.dataCadastro.split('/')
+    const date = new Date(`${year}-${month}-${day}T00:00:00`)
+    const afterStart = dataInicial ? date >= new Date(`${dataInicial}T00:00:00`) : true
+    const beforeEnd = dataFinal ? date <= new Date(`${dataFinal}T23:59:59`) : true
+    return matchStatus && afterStart && beforeEnd
+  })
 
   // Stats calculados a partir dos dados reais
   const totalClasseI = residuos.filter(r => r.classeNbr === 'I').length
@@ -131,7 +143,7 @@ export default function ResiduosList() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm mb-6">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <div className="flex gap-2">
-              {(['Todos', 'Gerado', 'Transportado'] as TabStatus[]).map((status) => (
+              {(['Todos', 'Gerado', 'Coletado', 'Transportado', 'Destinado'] as TabStatus[]).map((status) => (
                 <button
                   key={status}
                   onClick={() => setStatusFilter(status)}
@@ -156,6 +168,11 @@ export default function ResiduosList() {
               </div>
             </div>
           </div>
+          {error && (
+            <div className="px-4 py-3 text-sm text-red-600 bg-red-50 border-b border-red-100">
+              {error}
+            </div>
+          )}
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -189,6 +206,13 @@ export default function ResiduosList() {
                     </td>
                   </tr>
                 ))}
+                {residuosFiltrados.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500">
+                      Nenhum resíduo encontrado.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

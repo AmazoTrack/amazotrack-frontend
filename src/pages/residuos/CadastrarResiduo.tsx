@@ -1,5 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { companyService } from '../../services/company.service'
+import { wasteService } from '../../services/waste.service'
+import type { Company, Waste } from '../../types'
 
 type ClasseNBR = 'I' | 'II_A' | 'II_B' | null
 
@@ -20,19 +23,6 @@ interface FormErrors {
   unit?: string
   companyId?: string
 }
-
-const mockEmpresas = [
-  { id: 1, name: 'Metalúrgica Amazon Tech' },
-  { id: 2, name: 'Indústria de Polímeros Delta S.A.' },
-  { id: 3, name: 'Eletroeletrônicos do Norte Ltda' },
-  { id: 4, name: 'Química Industrial Manaus S.A.' },
-]
-
-const ultimosLancamentos = [
-  { data: '14 Out', residuo: 'Lodo Seco Industrial', classe: 'I', qty: '450 kg' },
-  { data: '12 Out', residuo: 'Papelão Ondulado', classe: 'II_B', qty: '1.2 t' },
-  { data: '10 Out', residuo: 'Óleos Lubrificantes', classe: 'I', qty: '200 L' },
-]
 
 const setores = [
   'Produção',
@@ -155,8 +145,32 @@ export default function NovoResiduo() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [recentWastes, setRecentWastes] = useState<Waste[]>([])
+  const [loadError, setLoadError] = useState('')
+  const [submitError, setSubmitError] = useState('')
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const classeDetectada: ClasseNBR = classifyWaste(form.description)
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoadError('')
+        const [companiesResponse, wastesResponse] = await Promise.all([
+          companyService.list(1, 50),
+          wasteService.list(1, 5),
+        ])
+        setCompanies(companiesResponse.data)
+        setRecentWastes(wastesResponse.data)
+      } catch (error) {
+        console.error('Erro ao carregar dados de cadastro:', error)
+        setLoadError('Não foi possível carregar empresas ou últimos lançamentos da API.')
+      }
+    }
+
+    loadData()
+  }, [])
 
   function handleChange(field: keyof FormData, value: string) {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -179,12 +193,30 @@ export default function NovoResiduo() {
   async function handleSubmit() {
     if (!validate()) return
     setLoading(true)
+    setSubmitError('')
 
-    await new Promise(r => setTimeout(r, 800))
-    setLoading(false)
-    setSuccess(true)
-    setTimeout(() => navigate('/dashboard/residuos'), 1500)
+    try {
+      await wasteService.create({
+        code: form.code || undefined,
+        description: form.description,
+        sector: form.sector,
+        quantity: Number(form.quantity),
+        unit: form.unit,
+        companyId: Number(form.companyId),
+      })
+      setSuccess(true)
+      setTimeout(() => navigate('/dashboard/residuos'), 900)
+    } catch (error) {
+      console.error('Erro ao salvar resíduo:', error)
+      setSubmitError('Não foi possível salvar o resíduo na API.')
+    } finally {
+      setLoading(false)
+    }
   }
+
+  const totalMesKg = recentWastes
+    .filter((waste) => waste.unit === 'kg')
+    .reduce((total, waste) => total + waste.quantity, 0)
 
   return (
     <div className="flex flex-col h-full">
@@ -196,11 +228,24 @@ export default function NovoResiduo() {
           <span className="text-[#005F73] font-semibold text-sm">Cadastrar Resíduo</span>
         </div>
         <div className="flex items-center gap-2">
-          {[<IconBell key="b" />, <IconSettings key="s" />, <IconHelp key="h" />].map((icon, i) => (
-            <button key={i} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-              {icon}
+          <button className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><IconBell /></button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setSettingsOpen((open) => !open)}
+              className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Configurações"
+            >
+              <IconSettings />
             </button>
-          ))}
+            {settingsOpen && (
+              <div className="absolute right-0 top-9 z-50 w-56 rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-600 shadow-lg">
+                <p className="font-semibold text-gray-800">Configurações</p>
+                <p className="mt-1">Cadastro conectado a empresas e resíduos reais.</p>
+              </div>
+            )}
+          </div>
+          <button className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"><IconHelp /></button>
           <div className="w-8 h-8 rounded-full bg-[#005F73] text-white text-xs font-bold flex items-center justify-center ml-1">
             RS
           </div>
@@ -237,6 +282,16 @@ export default function NovoResiduo() {
             Resíduo cadastrado com sucesso! Redirecionando...
           </div>
         )}
+        {loadError && (
+          <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium">
+            {loadError}
+          </div>
+        )}
+        {submitError && (
+          <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium">
+            {submitError}
+          </div>
+        )}
 
         <div className="flex gap-5">
 
@@ -271,8 +326,8 @@ export default function NovoResiduo() {
                   }`}
                 >
                   <option value="">Selecione a empresa...</option>
-                  {mockEmpresas.map(e => (
-                    <option key={e.id} value={e.id}>{e.name}</option>
+                  {companies.map(e => (
+                    <option key={e.id} value={e.id}>{e.corporateName}</option>
                   ))}
                 </select>
                 {errors.companyId && <p className="text-xs text-red-500 mt-1">{errors.companyId}</p>}
@@ -438,7 +493,7 @@ export default function NovoResiduo() {
               <div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Total Gerado (MÊS)</p>
                 <p className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Public Sans', sans-serif" }}>
-                  12.4 <span className="text-base font-normal text-gray-400">t</span>
+                  {(totalMesKg / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} <span className="text-base font-normal text-gray-400">t</span>
                 </p>
               </div>
               <div className="w-10 h-10 rounded-lg bg-[#e6f4f7] flex items-center justify-center text-[#005F73]">
@@ -451,7 +506,11 @@ export default function NovoResiduo() {
         <div className="mt-5 bg-white rounded-xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <h2 className="text-sm font-semibold text-gray-800">Últimos Lançamentos</h2>
-            <button className="flex items-center gap-1 text-xs text-[#005F73] font-medium hover:underline">
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard/residuos')}
+              className="flex items-center gap-1 text-xs text-[#005F73] font-medium hover:underline"
+            >
               Ver Histórico Completo <IconArrowRight />
             </button>
           </div>
@@ -466,16 +525,23 @@ export default function NovoResiduo() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {ultimosLancamentos.map((item, i) => (
-                  <tr key={i} className="hover:bg-gray-50/70 transition-colors">
-                    <td className="px-5 py-3 text-sm text-gray-500">{item.data}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-gray-800">{item.residuo}</td>
+                {recentWastes.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50/70 transition-colors">
+                    <td className="px-5 py-3 text-sm text-gray-500">{new Date(item.createdAt).toLocaleDateString('pt-BR')}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-800">{item.description}</td>
                     <td className="px-4 py-3">
-                      <ClasseBadge classe={item.classe as ClasseNBR} />
+                      <ClasseBadge classe={item.class} />
                     </td>
-                    <td className="px-4 py-3 text-sm font-semibold text-gray-700">{item.qty}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-gray-700">{item.quantity.toLocaleString('pt-BR')} {item.unit}</td>
                   </tr>
                 ))}
+                {recentWastes.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-5 py-6 text-center text-sm text-gray-500">
+                      Nenhum lançamento retornado pela API.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

@@ -21,45 +21,6 @@ interface MTREntry {
   status: StatusMTR
 }
 
-const mockMTRs: MTREntry[] = [
-  {
-    id: '1',
-    numero: '#MTR-2024-8821',
-    residuo: 'Lodo de Tratamento de Efluentes',
-    classificacao: 'I',
-    quantidade: '4.500 kg',
-    dataEntrada: '12/10/2024',
-    status: 'DESTINADO',
-  },
-  {
-    id: '2',
-    numero: '#MTR-2024-8790',
-    residuo: 'Resíduos de Manutenção Civil',
-    classificacao: 'II_B',
-    quantidade: '12.800 kg',
-    dataEntrada: '08/10/2024',
-    status: 'TRANSPORTADO',
-  },
-  {
-    id: '3',
-    numero: '#MTR-2024-8755',
-    residuo: 'Embalagens Plásticas Contaminadas',
-    classificacao: 'I',
-    quantidade: '820 kg',
-    dataEntrada: '05/10/2024',
-    status: 'DESTINADO',
-  },
-  {
-    id: '4',
-    numero: '#MTR-2024-8722',
-    residuo: 'Escórias de Fundição',
-    classificacao: 'II_A',
-    quantidade: '25.000 kg',
-    dataEntrada: '02/10/2024',
-    status: 'DESTINADO',
-  },
-]
-
 function mapWasteStatus(status?: WasteStatus): StatusMTR {
   if (status === 'destinado') return 'DESTINADO'
   if (status === 'transportado' || status === 'coletado') return 'TRANSPORTADO'
@@ -122,6 +83,7 @@ export default function EmpresaDetail() {
   const [company, setCompany] = useState<Company | null>(null)
   const [mtrs, setMtrs] = useState<MTREntry[]>([])
   const [error, setError] = useState('')
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -145,7 +107,7 @@ export default function EmpresaDetail() {
         console.error('Erro ao carregar empresa:', err)
         if (!isMounted) return
         setError('Não foi possível carregar os dados da empresa.')
-        setMtrs(mockMTRs)
+        setMtrs([])
       }
     }
 
@@ -181,15 +143,28 @@ export default function EmpresaDetail() {
           Detalhes da Empresa
         </button>
         <div className="flex items-center gap-2">
-          {[
-            <svg key="bell" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>,
-            <svg key="settings" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>,
-            <svg key="help" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>,
-          ].map((icon, i) => (
-            <button key={i} className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-              {icon}
+          <button className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
+          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setSettingsOpen((open) => !open)}
+              className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Configurações"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
             </button>
-          ))}
+            {settingsOpen && (
+              <div className="absolute right-0 top-9 z-50 w-56 rounded-lg border border-gray-200 bg-white p-3 text-xs text-gray-600 shadow-lg">
+                <p className="font-semibold text-gray-800">Configurações</p>
+                <p className="mt-1">Detalhe conectado ao Railway.</p>
+              </div>
+            )}
+          </div>
+          <button className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+          </button>
           <div className="w-8 h-8 rounded-full bg-[#005F73] text-white text-xs font-bold flex items-center justify-center ml-1">
             AA
           </div>
@@ -321,6 +296,13 @@ export default function EmpresaDetail() {
                         </td>
                       </tr>
                     ))}
+                    {mtrsFiltrados.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500">
+                          Nenhum MTR encontrado para esta empresa.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>

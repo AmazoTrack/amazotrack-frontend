@@ -22,12 +22,6 @@ interface MTR {
   status: StatusMTR
 }
 
-const mockMTRs: MTR[] = [
-  { id: '1', wasteId: 1, numero: 'MTR-2024-8821', geradora: 'Metalúrgica Amazon Tech', destinadora: 'EcoDestino Soluções Ambientais', residuo: 'Lodo de Tratamento de Efluentes', classificacao: 'I', quantidade: '4.500 kg', dataEmissao: '10/10/2024', dataMovimentacao: '12/10/2024', status: 'DESTINADO' },
-  { id: '2', wasteId: 2, numero: 'MTR-2024-8790', geradora: 'Indústria de Polímeros Delta S.A.', destinadora: 'Elogística Transportes Especiais', residuo: 'Resíduos de Manutenção Civil', classificacao: 'II_B', quantidade: '12.800 kg', dataEmissao: '06/10/2024', dataMovimentacao: '08/10/2024', status: 'TRANSPORTADO' },
-  { id: '3', wasteId: 3, numero: 'MTR-2024-8755', geradora: 'Metalúrgica Amazon Tech', destinadora: 'Reciclagem Norte Verde Ltda', residuo: 'Embalagens Plásticas Contaminadas', classificacao: 'I', quantidade: '820 kg', dataEmissao: '03/10/2024', dataMovimentacao: '05/10/2024', status: 'DESTINADO' },
-]
-
 function mapWasteStatus(status?: WasteStatus): StatusMTR {
   if (status === 'destinado') return 'DESTINADO'
   if (status === 'transportado' || status === 'coletado') return 'TRANSPORTADO'
@@ -56,12 +50,14 @@ export default function MTRsList() {
   const navigate = useNavigate()
   const [tabAtiva, setTabAtiva] = useState<TabFiltro>('todos')
   const [busca, setBusca] = useState('')
-  const [mtrs, setMtrs] = useState<MTR[]>(mockMTRs)
+  const [mtrs, setMtrs] = useState<MTR[]>([])
+  const [error, setError] = useState('')
   const [menuAberto, setMenuAberto] = useState<string | null>(null)
 
   useEffect(() => {
     async function carregarMTRs() {
       try {
+        setError('')
         const data = await apiFetch<ApiMTR[]>('/mtrs', 'GET')
         const formatados = data.map((m) => ({
           id: String(m.id),
@@ -79,7 +75,8 @@ export default function MTRsList() {
         setMtrs(formatados)
       } catch (error) {
         console.error('Erro ao carregar MTRs:', error)
-        setMtrs(mockMTRs)
+        setError('Não foi possível carregar os MTRs da API.')
+        setMtrs([])
       }
     }
     carregarMTRs()
@@ -141,6 +138,26 @@ export default function MTRsList() {
     doc.setTextColor(150, 150, 150)
     doc.text('Documento gerado pelo sistema AmazoTrack', 105, 287, { align: 'center' })
     doc.save('relatorio-mtrs.pdf')
+  }
+
+  function exportarMTRPDF(mtr: MTR) {
+    const doc = new jsPDF()
+    doc.setFillColor(6, 38, 48)
+    doc.rect(0, 0, 210, 22, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(13)
+    doc.text(`MTR ${mtr.numero}`, 14, 14)
+
+    doc.setTextColor(40, 40, 40)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    doc.text(`Resíduo: ${mtr.residuo}`, 14, 38)
+    doc.text(`Classe: ${mtr.classificacao}`, 14, 48)
+    doc.text(`Quantidade: ${mtr.quantidade}`, 14, 58)
+    doc.text(`Destinadora: ${mtr.destinadora}`, 14, 68)
+    doc.text(`Status: ${mtr.status}`, 14, 78)
+    doc.save(`${mtr.numero}.pdf`)
   }
 
   // Stats calculados a partir dos dados reais
@@ -245,6 +262,11 @@ export default function MTRsList() {
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
+          {error && (
+            <div className="px-4 py-3 text-sm text-red-600 bg-red-50 border-b border-red-100">
+              {error}
+            </div>
+          )}
           <div className="flex items-center justify-between px-4 pt-4 pb-0 border-b border-gray-100">
             <div className="flex gap-1">
               {tabs.map((tab) => (
@@ -311,13 +333,20 @@ export default function MTRsList() {
                       {menuAberto === mtr.id && (
                         <div className="absolute right-4 top-8 z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-44">
                           <button onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/residuos/${mtr.wasteId}`) }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Ver detalhes</button>
-                          <button onClick={(e) => { e.stopPropagation(); setMenuAberto(null) }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Gerar MTR (PDF)</button>
-                          <button onClick={(e) => { e.stopPropagation(); setMenuAberto(null) }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Cancelar MTR</button>
+                          <button onClick={(e) => { e.stopPropagation(); exportarMTRPDF(mtr); setMenuAberto(null) }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Gerar MTR (PDF)</button>
+                          <button disabled className="w-full cursor-not-allowed text-left px-4 py-2 text-sm text-gray-400">Cancelar indisponível</button>
                         </div>
                       )}
                     </td>
                   </tr>
                 ))}
+                {mtrsFiltrados.length === 0 && (
+                  <tr>
+                    <td colSpan={10} className="px-4 py-6 text-center text-sm text-gray-500">
+                      Nenhum MTR encontrado.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
