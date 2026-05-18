@@ -372,7 +372,7 @@ export default function ResiduosDetail() {
       {/* Topbar */}
       <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
         <button
-          onClick={() => navigate('/dashboard/residuos')}
+          onClick={() => navigate('/dashboard/mtrs')}
           className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-[#005F73] transition-colors"
         >
           <IconArrowLeft />
