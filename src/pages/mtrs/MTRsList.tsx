@@ -10,7 +10,7 @@ type StatusMTR = 'DESTINADO' | 'TRANSPORTADO' | 'PENDENTE' | 'CANCELADO'
 
 interface MTR {
   id: string
-  wasteId: number
+  wasteId: number | null
   numero: string
   geradora: string
   destinadora: string
@@ -61,7 +61,7 @@ export default function MTRsList() {
         const data = await apiFetch<ApiMTR[]>('/mtrs', 'GET')
         const formatados = data.map((m) => ({
           id: String(m.id),
-          wasteId: m.wasteId,
+          wasteId: m.waste?.id ?? m.wasteId ?? null,
           numero: m.number,
           geradora: m.waste?.companyId ? `Empresa #${m.waste.companyId}` : '—',
           destinadora: m.destination?.corporateName ?? '—',
@@ -158,6 +158,15 @@ export default function MTRsList() {
     doc.text(`Destinadora: ${mtr.destinadora}`, 14, 68)
     doc.text(`Status: ${mtr.status}`, 14, 78)
     doc.save(`${mtr.numero}.pdf`)
+  }
+
+  function abrirDetalhesMTR(mtr: MTR) {
+    if (!mtr.wasteId) {
+      setError('Este MTR não possui resíduo vinculado para abrir detalhes.')
+      return
+    }
+
+    navigate(`/dashboard/residuos/${mtr.wasteId}`)
   }
 
   // Stats calculados a partir dos dados reais
@@ -307,7 +316,7 @@ export default function MTRsList() {
                 {mtrsFiltrados.map((mtr) => (
                   <tr
                     key={mtr.id}
-                    onClick={() => navigate(`/dashboard/residuos/${mtr.wasteId}`)}
+                    onClick={() => abrirDetalhesMTR(mtr)}
                     className="hover:bg-gray-50/70 transition-colors cursor-pointer"
                   >
                     <td className="px-4 py-3.5">
@@ -332,7 +341,7 @@ export default function MTRsList() {
                       </button>
                       {menuAberto === mtr.id && (
                         <div className="absolute right-4 top-8 z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-44">
-                          <button onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/residuos/${mtr.wasteId}`) }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Ver detalhes</button>
+                          <button onClick={(e) => { e.stopPropagation(); abrirDetalhesMTR(mtr); setMenuAberto(null) }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Ver detalhes</button>
                           <button onClick={(e) => { e.stopPropagation(); exportarMTRPDF(mtr); setMenuAberto(null) }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Gerar MTR (PDF)</button>
                           <button disabled className="w-full cursor-not-allowed text-left px-4 py-2 text-sm text-gray-400">Cancelar indisponível</button>
                         </div>

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import Button from '../../components/Button'
 import Badge from '../../components/Badge'
 import { useParams } from 'react-router-dom'
+import jsPDF from 'jspdf'
 import { companyService } from '../../services/company.service'
 import { mtrService } from '../../services/mtr.service'
 import type { Company, MTR as ApiMTR, WasteStatus } from '../../types'
@@ -36,6 +37,46 @@ function formatMTR(mtr: ApiMTR): MTREntry {
     quantidade: mtr.waste ? `${mtr.waste.quantity.toLocaleString('pt-BR')} ${mtr.waste.unit}` : '—',
     dataEntrada: new Date(mtr.issueDate).toLocaleDateString('pt-BR'),
     status: mapWasteStatus(mtr.waste?.status),
+  }
+}
+
+function getLicenseStatus(expiry?: string | null) {
+  if (!expiry) {
+    return {
+      label: 'Não informada',
+      detail: 'Sem vencimento cadastrado',
+      tone: 'text-gray-700 bg-gray-50 border-gray-200',
+      isExpired: false,
+    }
+  }
+
+  const today = new Date()
+  const expiryDate = new Date(expiry)
+  const diffDays = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+
+  if (diffDays < 0) {
+    return {
+      label: 'Vencida',
+      detail: `Expirou há ${Math.abs(diffDays)} dias`,
+      tone: 'text-red-700 bg-red-50 border-red-200',
+      isExpired: true,
+    }
+  }
+
+  if (diffDays <= 60) {
+    return {
+      label: 'Vencendo em breve',
+      detail: `Expira em ${diffDays} dias`,
+      tone: 'text-orange-700 bg-orange-50 border-orange-200',
+      isExpired: false,
+    }
+  }
+
+  return {
+    label: 'Válida',
+    detail: `Expira em ${diffDays} dias`,
+    tone: 'text-green-700 bg-green-50 border-green-200',
+    isExpired: false,
   }
 }
 
@@ -124,6 +165,50 @@ export default function EmpresaDetail() {
       m.numero.toLowerCase().includes(filtraMTR.toLowerCase()) ||
       m.residuo.toLowerCase().includes(filtraMTR.toLowerCase())
   )
+  const licenseStatus = getLicenseStatus(company?.licenseExpiry)
+
+  function baixarCertificadoDigital() {
+    if (!company) return
+
+    const doc = new jsPDF()
+    const issuedAt = new Date().toLocaleDateString('pt-BR')
+
+    doc.setFillColor(6, 38, 48)
+    doc.rect(0, 0, 210, 26, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(14)
+    doc.text('CERTIFICADO DIGITAL AMAZOTRACK', 14, 17)
+
+    doc.setTextColor(35, 35, 35)
+    doc.setFontSize(11)
+    doc.text('Dados da empresa', 14, 42)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    doc.text(`Razão social: ${company.corporateName}`, 14, 54)
+    doc.text(`CNPJ: ${company.cnpj}`, 14, 64)
+    doc.text(`Tipo: ${company.type === 'destinadora' ? 'Destinadora' : 'Geradora'}`, 14, 74)
+    doc.text(`E-mail: ${company.email ?? 'Não informado'}`, 14, 84)
+    doc.text(`Telefone: ${company.phone ?? 'Não informado'}`, 14, 94)
+
+    doc.setFont('helvetica', 'bold')
+    doc.text('Licença ambiental', 14, 114)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Número da LO: ${company.licenseNumber ?? 'Não informado'}`, 14, 126)
+    doc.text(`Órgão emissor: ${company.issuingAgency ?? 'Não informado'}`, 14, 136)
+    doc.text(
+      `Vencimento: ${company.licenseExpiry ? new Date(company.licenseExpiry).toLocaleDateString('pt-BR') : 'Não informado'}`,
+      14,
+      146,
+    )
+    doc.text(`Status: ${licenseStatus.label}`, 14, 156)
+
+    doc.setFontSize(8)
+    doc.setTextColor(120, 120, 120)
+    doc.text(`Emitido em ${issuedAt} pelo AmazoTrack com dados atuais da API.`, 14, 282)
+
+    doc.save(`certificado-digital-empresa-${company.id}.pdf`)
+  }
 
   if (!company && error) return <div className="p-6 text-red-600">{error}</div>
   if (!company) return <div className="p-6 text-gray-500">Carregando...</div>
@@ -201,9 +286,7 @@ export default function EmpresaDetail() {
                         Endereço Operacional
                       </p>
                       <p className="text-sm text-gray-700 leading-relaxed">
-                        Av. Industrial, 4500 - Bloco C,<br />
-                        Distrito Industrial<br />
-                        Manaus, AM - 69075-000
+                        Endereço não informado pela API.
                       </p>
                     </div>
                     <div>
@@ -328,22 +411,22 @@ export default function EmpresaDetail() {
                 {
                   icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>,
                   title: 'Arquivos e Anexos',
-                  sub: '12 documentos enviados',
+                  sub: 'Documentos não cadastrados',
                 },
                 {
                   icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>,
                   title: 'Localização GPS',
-                  sub: 'Ver no mapa integrado',
+                  sub: 'Localização não cadastrada',
                 },
                 {
                   icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>,
                   title: 'Métricas de Destinação',
-                  sub: 'Relatórios de eficiência',
+                  sub: `${mtrs.length} MTRs recebidos`,
                 },
                 {
                   icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="1 4 1 10 7 10" /><polyline points="23 20 23 14 17 14" /><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" /></svg>,
                   title: 'Audit Log',
-                  sub: 'Última alteração: 2h atrás',
+                  sub: `Cadastro criado em ${new Date(company.createdAt).toLocaleDateString('pt-BR')}`,
                 },
               ].map((card) => (
                 <button
@@ -377,7 +460,7 @@ export default function EmpresaDetail() {
                 </span>
               </div>
 
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+              <div className={`${licenseStatus.tone} border rounded-lg p-3 mb-4`}>
                 <div className="flex items-start gap-2">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" className="mt-0.5 flex-shrink-0">
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -385,11 +468,11 @@ export default function EmpresaDetail() {
                     <line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
                   <div>
-                    <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">
+                    <p className="text-[10px] font-bold uppercase tracking-wider">
                       Status da Validade
                     </p>
-                    <p className="text-sm font-semibold text-orange-800 mt-0.5">Vencendo em breve</p>
-                    <p className="text-xs text-orange-600">Expira em 42 dias</p>
+                    <p className="text-sm font-semibold mt-0.5">{licenseStatus.label}</p>
+                    <p className="text-xs">{licenseStatus.detail}</p>
                   </div>
                 </div>
               </div>
@@ -398,8 +481,8 @@ export default function EmpresaDetail() {
                 {[
                   { label: 'Número da LO', value: company.licenseNumber ?? 'Não informado' },
                   { label: 'Órgão Emissor', value: company.issuingAgency ?? 'Não informado' },
-                  { label: 'Emissão', value: '15/05/2023' },
-                  { label: 'Vencimento', value: company.licenseExpiry ? new Date(company.licenseExpiry).toLocaleDateString('pt-BR') : 'Não informado', red: true },
+                  { label: 'Cadastro', value: new Date(company.createdAt).toLocaleDateString('pt-BR') },
+                  { label: 'Vencimento', value: company.licenseExpiry ? new Date(company.licenseExpiry).toLocaleDateString('pt-BR') : 'Não informado', red: licenseStatus.isExpired },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center justify-between">
                     <span className="text-xs text-gray-500">{item.label}</span>
@@ -410,7 +493,7 @@ export default function EmpresaDetail() {
                 ))}
               </div>
 
-              <Button variant="primary" className="w-full mt-5 justify-center text-xs">
+              <Button variant="primary" className="w-full mt-5 justify-center text-xs" onClick={baixarCertificadoDigital}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />

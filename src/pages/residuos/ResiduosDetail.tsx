@@ -4,6 +4,7 @@ import Badge from '../../components/Badge'
 import Button from '../../components/Button'
 import { companyService } from '../../services/company.service'
 import { movementService } from '../../services/movement.service'
+import { mtrService } from '../../services/mtr.service'
 import { wasteService } from '../../services/waste.service'
 import type { Company, Movement, Waste, WasteStatus } from '../../types'
 
@@ -51,15 +52,45 @@ export default function ResiduosDetail() {
       try {
         setLoading(true)
         setError('')
-        const wasteData = await wasteService.findById(Number(id))
-        const [companyData, movementResponse] = await Promise.all([
+        const wasteId = Number(id)
+        if (Number.isNaN(wasteId)) {
+          setError('ID de resíduo inválido.')
+          return
+        }
+
+        let wasteData: Waste
+
+        try {
+          wasteData = await wasteService.findById(wasteId)
+        } catch (primaryError) {
+          const mtrs = await mtrService.list()
+          const relatedMtr = mtrs.find((mtr) => mtr.wasteId === wasteId || mtr.waste?.id === wasteId)
+
+          if (!relatedMtr?.waste) {
+            throw primaryError
+          }
+
+          wasteData = relatedMtr.waste
+        }
+
+        setWaste(wasteData)
+
+        const [companyResult, movementResult] = await Promise.allSettled([
           companyService.findById(wasteData.companyId),
           movementService.list(1, 100),
         ])
 
-        setWaste(wasteData)
-        setCompany(companyData)
-        setMovements(movementResponse.data.filter((movement) => movement.wasteId === wasteData.id))
+        if (companyResult.status === 'fulfilled') {
+          setCompany(companyResult.value)
+        } else {
+          setCompany(null)
+        }
+
+        if (movementResult.status === 'fulfilled') {
+          setMovements(movementResult.value.data.filter((movement) => movement.wasteId === wasteData.id))
+        } else {
+          setMovements([])
+        }
       } catch (err) {
         console.error('Erro ao carregar resíduo:', err)
         setError('Não foi possível carregar o resíduo da API.')
